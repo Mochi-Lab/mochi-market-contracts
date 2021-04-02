@@ -75,10 +75,7 @@ library SellOrderLogic {
      * @param sellOrder Sell order object
      * @param newPrice New price of the sell order
      **/
-    function updatePrice(
-        DataTypes.SellOrder storage sellOrder,
-        uint256 newPrice
-    ) internal {
+    function updatePrice(DataTypes.SellOrder storage sellOrder, uint256 newPrice) internal {
         sellOrder.price = newPrice;
     }
 }

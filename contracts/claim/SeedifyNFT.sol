@@ -55,10 +55,7 @@ contract SeedifyNFT is ERC721, Ownable {
         _setBaseURI(baseUri);
     }
 
-    function setTokenURI(uint256 tokenId, string memory uri)
-        external
-        onlyOwner
-    {
+    function setTokenURI(uint256 tokenId, string memory uri) external onlyOwner {
         _setTokenURI(tokenId, uri);
     }
 }

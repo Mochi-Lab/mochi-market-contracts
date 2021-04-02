@@ -20,8 +20,7 @@ contract ERC721Factory {
         string memory symbol,
         string memory baseUri
     ) external returns (address) {
-        address collectionAddress =
-            address(new SampleERC721(owner, name, symbol, baseUri));
+        address collectionAddress = address(new SampleERC721(owner, name, symbol, baseUri));
 
         return collectionAddress;
     }

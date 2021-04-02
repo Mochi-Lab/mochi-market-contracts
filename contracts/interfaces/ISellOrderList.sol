@@ -19,10 +19,7 @@ interface ISellOrderList {
         address token
     ) external;
 
-    function getSellOrderById(uint256 id)
-        external
-        view
-        returns (DataTypes.SellOrder memory);
+    function getSellOrderById(uint256 id) external view returns (DataTypes.SellOrder memory);
 
     function getSellOrderByIdList(uint256[] memory idList)
         external
@@ -34,32 +31,20 @@ interface ISellOrderList {
         view
         returns (DataTypes.SellOrder[] memory);
 
-    function getAllSellOrder()
-        external
-        view
-        returns (DataTypes.SellOrder[] memory);
+    function getAllSellOrder() external view returns (DataTypes.SellOrder[] memory);
 
     function getNumberOfSellOrder() external view returns (uint256);
 
-    function getAvailableSellOrder()
-        external
-        view
-        returns (DataTypes.SellOrder[] memory);
+    function getAvailableSellOrder() external view returns (DataTypes.SellOrder[] memory);
 
-    function getAvailableSellOrderIdList()
-        external
-        view
-        returns (uint256[] memory);
+    function getAvailableSellOrderIdList() external view returns (uint256[] memory);
 
     function getAllSellOrderByUser(address user)
         external
         view
         returns (DataTypes.SellOrder[] memory);
 
-    function getAllSellOrderIdListByUser(address user)
-        external
-        view
-        returns (uint256[] memory);
+    function getAllSellOrderIdListByUser(address user) external view returns (uint256[] memory);
 
     function getAvailableSellOrderByUser(address user)
         external
@@ -91,10 +76,7 @@ interface ISellOrderList {
         view
         returns (uint256[] memory);
 
-    function getBoughtByUser(address user)
-        external
-        view
-        returns (DataTypes.SellOrder[] memory);
+    function getBoughtByUser(address user) external view returns (DataTypes.SellOrder[] memory);
 
     function deactiveSellOrder(uint256 id) external;
 

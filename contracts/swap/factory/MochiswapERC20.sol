@@ -20,11 +20,7 @@ contract MochiswapERC20 is IMochiswapERC20 {
         0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
     mapping(address => uint256) public override nonces;
 
-    event Approval(
-        address indexed owner,
-        address indexed spender,
-        uint256 value
-    );
+    event Approval(address indexed owner, address indexed spender, uint256 value);
     event Transfer(address indexed from, address indexed to, uint256 value);
 
     constructor() public {
@@ -78,20 +74,12 @@ contract MochiswapERC20 is IMochiswapERC20 {
         emit Transfer(from, to, value);
     }
 
-    function approve(address spender, uint256 value)
-        external
-        override
-        returns (bool)
-    {
+    function approve(address spender, uint256 value) external override returns (bool) {
         _approve(msg.sender, spender, value);
         return true;
     }
 
-    function transfer(address to, uint256 value)
-        external
-        override
-        returns (bool)
-    {
+    function transfer(address to, uint256 value) external override returns (bool) {
         _transfer(msg.sender, to, value);
         return true;
     }
@@ -102,9 +90,7 @@ contract MochiswapERC20 is IMochiswapERC20 {
         uint256 value
     ) external override returns (bool) {
         if (allowance[from][msg.sender] != uint256(-1)) {
-            allowance[from][msg.sender] = allowance[from][msg.sender].sub(
-                value
-            );
+            allowance[from][msg.sender] = allowance[from][msg.sender].sub(value);
         }
         _transfer(from, to, value);
         return true;

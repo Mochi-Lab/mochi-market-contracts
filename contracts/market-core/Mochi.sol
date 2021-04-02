@@ -34,10 +34,7 @@ contract Mochi is ERC721 {
         _burn(tokenId);
     }
 
-    function setTokenURI(uint256 tokenId, string memory tokenUri)
-        external
-        onlyOwnerOf(tokenId)
-    {
+    function setTokenURI(uint256 tokenId, string memory tokenUri) external onlyOwnerOf(tokenId) {
         _setTokenURI(tokenId, tokenUri);
     }
 }

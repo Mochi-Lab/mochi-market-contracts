@@ -55,8 +55,7 @@ contract ExchangeOrderList is Initializable {
 
     // Latest exchange order of a nft is of type ERC721
     // nftAddress => tokenId => latest exchangeId
-    mapping(address => mapping(uint256 => uint256))
-        internal _inforToExchangeId_ERC721;
+    mapping(address => mapping(uint256 => uint256)) internal _inforToExchangeId_ERC721;
 
     // Latest exchange order of a nft is of type ERC721
     // seller => nftAddress => tokenId => latest exchangeId
@@ -78,17 +77,10 @@ contract ExchangeOrderList is Initializable {
 
     event ExchangeOrderDeactive(uint256 indexed exchangeId);
 
-    event ExchangeOrderCompleted(
-        uint256 indexed exchangeId,
-        uint256 destinationId,
-        address buyer
-    );
+    event ExchangeOrderCompleted(uint256 indexed exchangeId, uint256 destinationId, address buyer);
 
     modifier onlyMarket() {
-        require(
-            addressesProvider.getMarket() == msg.sender,
-            Errors.CALLER_NOT_MARKET
-        );
+        require(addressesProvider.getMarket() == msg.sender, Errors.CALLER_NOT_MARKET);
         _;
     }
 
@@ -211,8 +203,7 @@ contract ExchangeOrderList is Initializable {
         view
         returns (DataTypes.ExchangeOrder[] memory)
     {
-        DataTypes.ExchangeOrder[] memory result =
-            new DataTypes.ExchangeOrder[](idList.length);
+        DataTypes.ExchangeOrder[] memory result = new DataTypes.ExchangeOrder[](idList.length);
 
         for (uint256 i = 0; i < idList.length; i++) {
             result[i] = _exchangeOrders[idList[i]];
@@ -225,11 +216,7 @@ contract ExchangeOrderList is Initializable {
      * @dev Get all exchange order
      * @return Information of all exchange orders
      */
-    function getAllExchangeOrders()
-        external
-        view
-        returns (DataTypes.ExchangeOrder[] memory)
-    {
+    function getAllExchangeOrders() external view returns (DataTypes.ExchangeOrder[] memory) {
         return _exchangeOrders;
     }
 
@@ -248,31 +235,20 @@ contract ExchangeOrderList is Initializable {
     function getAvailableExchangeOrders()
         external
         view
-        returns (
-            DataTypes.ExchangeOrder[] memory,
-            DataTypes.ExchangeOrder[] memory
-        )
+        returns (DataTypes.ExchangeOrder[] memory, DataTypes.ExchangeOrder[] memory)
     {
         DataTypes.ExchangeOrder[] memory result_ERC721 =
-            new DataTypes.ExchangeOrder[](
-                _availableExchangeOrders_ERC721.length
-            );
+            new DataTypes.ExchangeOrder[](_availableExchangeOrders_ERC721.length);
 
         for (uint256 i = 0; i < _availableExchangeOrders_ERC721.length; i++) {
-            result_ERC721[i] = _exchangeOrders[
-                _availableExchangeOrders_ERC721[i]
-            ];
+            result_ERC721[i] = _exchangeOrders[_availableExchangeOrders_ERC721[i]];
         }
 
         DataTypes.ExchangeOrder[] memory result_ERC1155 =
-            new DataTypes.ExchangeOrder[](
-                _availableExchangeOrders_ERC1155.length
-            );
+            new DataTypes.ExchangeOrder[](_availableExchangeOrders_ERC1155.length);
 
         for (uint256 i = 0; i < _availableExchangeOrders_ERC1155.length; i++) {
-            result_ERC1155[i] = _exchangeOrders[
-                _availableExchangeOrders_ERC1155[i]
-            ];
+            result_ERC1155[i] = _exchangeOrders[_availableExchangeOrders_ERC1155[i]];
         }
 
         return (result_ERC721, result_ERC1155);
@@ -287,15 +263,13 @@ contract ExchangeOrderList is Initializable {
         view
         returns (uint256[] memory, uint256[] memory)
     {
-        uint256[] memory result_ERC721 =
-            new uint256[](_availableExchangeOrders_ERC721.length);
+        uint256[] memory result_ERC721 = new uint256[](_availableExchangeOrders_ERC721.length);
 
         for (uint256 i = 0; i < _availableExchangeOrders_ERC721.length; i++) {
             result_ERC721[i] = _availableExchangeOrders_ERC721[i];
         }
 
-        uint256[] memory result_ERC1155 =
-            new uint256[](_availableExchangeOrders_ERC1155.length);
+        uint256[] memory result_ERC1155 = new uint256[](_availableExchangeOrders_ERC1155.length);
 
         for (uint256 i = 0; i < _availableExchangeOrders_ERC1155.length; i++) {
             result_ERC1155[i] = _availableExchangeOrders_ERC1155[i];
@@ -346,37 +320,18 @@ contract ExchangeOrderList is Initializable {
     function getAvailableExchangeOrdersByUser(address user)
         external
         view
-        returns (
-            DataTypes.ExchangeOrder[] memory,
-            DataTypes.ExchangeOrder[] memory
-        )
+        returns (DataTypes.ExchangeOrder[] memory, DataTypes.ExchangeOrder[] memory)
     {
         DataTypes.ExchangeOrder[] memory result_ERC721 =
-            new DataTypes.ExchangeOrder[](
-                _sellerToAvailableOrders_ERC721[user].length
-            );
-        for (
-            uint256 i = 0;
-            i < _sellerToAvailableOrders_ERC721[user].length;
-            i++
-        ) {
-            result_ERC721[i] = _exchangeOrders[
-                _sellerToAvailableOrders_ERC721[user][i]
-            ];
+            new DataTypes.ExchangeOrder[](_sellerToAvailableOrders_ERC721[user].length);
+        for (uint256 i = 0; i < _sellerToAvailableOrders_ERC721[user].length; i++) {
+            result_ERC721[i] = _exchangeOrders[_sellerToAvailableOrders_ERC721[user][i]];
         }
 
         DataTypes.ExchangeOrder[] memory result_ERC1155 =
-            new DataTypes.ExchangeOrder[](
-                _sellerToAvailableOrders_ERC1155[user].length
-            );
-        for (
-            uint256 i = 0;
-            i < _sellerToAvailableOrders_ERC1155[user].length;
-            i++
-        ) {
-            result_ERC1155[i] = _exchangeOrders[
-                _sellerToAvailableOrders_ERC1155[user][i]
-            ];
+            new DataTypes.ExchangeOrder[](_sellerToAvailableOrders_ERC1155[user].length);
+        for (uint256 i = 0; i < _sellerToAvailableOrders_ERC1155[user].length; i++) {
+            result_ERC1155[i] = _exchangeOrders[_sellerToAvailableOrders_ERC1155[user][i]];
         }
 
         return (result_ERC721, result_ERC1155);
@@ -393,21 +348,13 @@ contract ExchangeOrderList is Initializable {
     {
         uint256[] memory result_ERC721 =
             new uint256[](_sellerToAvailableOrders_ERC721[user].length);
-        for (
-            uint256 i = 0;
-            i < _sellerToAvailableOrders_ERC721[user].length;
-            i++
-        ) {
+        for (uint256 i = 0; i < _sellerToAvailableOrders_ERC721[user].length; i++) {
             result_ERC721[i] = _sellerToAvailableOrders_ERC721[user][i];
         }
 
         uint256[] memory result_ERC1155 =
             new uint256[](_sellerToAvailableOrders_ERC1155[user].length);
-        for (
-            uint256 i = 0;
-            i < _sellerToAvailableOrders_ERC1155[user].length;
-            i++
-        ) {
+        for (uint256 i = 0; i < _sellerToAvailableOrders_ERC1155[user].length; i++) {
             result_ERC1155[i] = _sellerToAvailableOrders_ERC1155[user][i];
         }
 
@@ -441,8 +388,7 @@ contract ExchangeOrderList is Initializable {
         view
         returns (uint256[] memory)
     {
-        uint256[] memory result =
-            new uint256[](_nftToOrders[nftAddress].length);
+        uint256[] memory result = new uint256[](_nftToOrders[nftAddress].length);
 
         for (uint256 i = 0; i < _nftToOrders[nftAddress].length; i++) {
             result[i] = _nftToOrders[nftAddress][i];
@@ -460,9 +406,7 @@ contract ExchangeOrderList is Initializable {
         returns (DataTypes.ExchangeOrder[] memory)
     {
         DataTypes.ExchangeOrder[] memory result =
-            new DataTypes.ExchangeOrder[](
-                _nftToAvailableOrders[nftAddress].length
-            );
+            new DataTypes.ExchangeOrder[](_nftToAvailableOrders[nftAddress].length);
 
         for (uint256 i = 0; i < _nftToAvailableOrders[nftAddress].length; i++) {
             result[i] = _exchangeOrders[_nftToAvailableOrders[nftAddress][i]];
@@ -480,8 +424,7 @@ contract ExchangeOrderList is Initializable {
         view
         returns (uint256[] memory)
     {
-        uint256[] memory result =
-            new uint256[](_nftToAvailableOrders[nftAddress].length);
+        uint256[] memory result = new uint256[](_nftToAvailableOrders[nftAddress].length);
 
         for (uint256 i = 0; i < _nftToAvailableOrders[nftAddress].length; i++) {
             result[i] = _nftToAvailableOrders[nftAddress][i];
@@ -555,8 +498,7 @@ contract ExchangeOrderList is Initializable {
         address nftAddress,
         uint256 tokenId
     ) external view returns (bool found, uint256 id) {
-        uint256 exchangeId =
-            _inforToExchangeId_ERC1155[seller][nftAddress][tokenId];
+        uint256 exchangeId = _inforToExchangeId_ERC1155[seller][nftAddress][tokenId];
         if (
             _exchangeOrders[exchangeId].nftAddresses[0] == nftAddress &&
             _exchangeOrders[exchangeId].tokenIds[0] == tokenId &&
@@ -580,18 +522,11 @@ contract ExchangeOrderList is Initializable {
         uint256 tokenId,
         address seller
     ) external view returns (bool) {
-        for (
-            uint256 i = 0;
-            i < _sellerToAvailableOrders_ERC721[seller].length;
-            i++
-        ) {
+        for (uint256 i = 0; i < _sellerToAvailableOrders_ERC721[seller].length; i++) {
             if (
-                _exchangeOrders[_sellerToAvailableOrders_ERC721[seller][i]]
-                    .nftAddresses[0] ==
+                _exchangeOrders[_sellerToAvailableOrders_ERC721[seller][i]].nftAddresses[0] ==
                 nftAddress &&
-                _exchangeOrders[_sellerToAvailableOrders_ERC721[seller][i]]
-                    .tokenIds[0] ==
-                tokenId
+                _exchangeOrders[_sellerToAvailableOrders_ERC721[seller][i]].tokenIds[0] == tokenId
             ) {
                 return true;
             }
@@ -611,18 +546,11 @@ contract ExchangeOrderList is Initializable {
         uint256 tokenId,
         address seller
     ) external view returns (bool) {
-        for (
-            uint256 i = 0;
-            i < _sellerToAvailableOrders_ERC1155[seller].length;
-            i++
-        ) {
+        for (uint256 i = 0; i < _sellerToAvailableOrders_ERC1155[seller].length; i++) {
             if (
-                _exchangeOrders[_sellerToAvailableOrders_ERC1155[seller][i]]
-                    .nftAddresses[0] ==
+                _exchangeOrders[_sellerToAvailableOrders_ERC1155[seller][i]].nftAddresses[0] ==
                 nftAddress &&
-                _exchangeOrders[_sellerToAvailableOrders_ERC1155[seller][i]]
-                    .tokenIds[0] ==
-                tokenId
+                _exchangeOrders[_sellerToAvailableOrders_ERC1155[seller][i]].tokenIds[0] == tokenId
             ) {
                 return true;
             }
@@ -641,9 +569,7 @@ contract ExchangeOrderList is Initializable {
      * internal function called inside addExchangeOrder() function
      * @param exchangeOrder Exchange order object
      */
-    function _addExchangeOrderToList(
-        DataTypes.ExchangeOrder memory exchangeOrder
-    ) internal {
+    function _addExchangeOrderToList(DataTypes.ExchangeOrder memory exchangeOrder) internal {
         uint256 exchangeId = exchangeOrder.exchangeId;
         _sellerToOrders[exchangeOrder.users[0]].push(exchangeId);
         _nftToOrders[exchangeOrder.nftAddresses[0]].push(exchangeId);
@@ -651,17 +577,13 @@ contract ExchangeOrderList is Initializable {
 
         if (nftList.isERC1155(exchangeOrder.nftAddresses[0]) == true) {
             _availableExchangeOrders_ERC1155.push(exchangeId);
-            _sellerToAvailableOrders_ERC1155[exchangeOrder.users[0]].push(
-                exchangeId
-            );
-            _inforToExchangeId_ERC1155[exchangeOrder.users[0]][
-                exchangeOrder.nftAddresses[0]
-            ][exchangeOrder.tokenIds[0]] = exchangeId;
+            _sellerToAvailableOrders_ERC1155[exchangeOrder.users[0]].push(exchangeId);
+            _inforToExchangeId_ERC1155[exchangeOrder.users[0]][exchangeOrder.nftAddresses[0]][
+                exchangeOrder.tokenIds[0]
+            ] = exchangeId;
         } else {
             _availableExchangeOrders_ERC721.push(exchangeId);
-            _sellerToAvailableOrders_ERC721[exchangeOrder.users[0]].push(
-                exchangeId
-            );
+            _sellerToAvailableOrders_ERC721[exchangeOrder.users[0]].push(exchangeId);
             _inforToExchangeId_ERC721[exchangeOrder.nftAddresses[0]][
                 exchangeOrder.tokenIds[0]
             ] = exchangeId;
@@ -678,19 +600,14 @@ contract ExchangeOrderList is Initializable {
      * @param exchangeId Id of exchange order
      */
     function _removeExchangeOrderFromList(uint256 exchangeId) internal {
-        DataTypes.ExchangeOrder memory exchangeOrder =
-            _exchangeOrders[exchangeId];
-        _nftToAvailableOrders[exchangeOrder.nftAddresses[0]].removeAtValue(
-            exchangeId
-        );
+        DataTypes.ExchangeOrder memory exchangeOrder = _exchangeOrders[exchangeId];
+        _nftToAvailableOrders[exchangeOrder.nftAddresses[0]].removeAtValue(exchangeId);
         if (nftList.isERC1155(exchangeOrder.nftAddresses[0]) == true) {
             _availableExchangeOrders_ERC1155.removeAtValue(exchangeId);
-            _sellerToAvailableOrders_ERC1155[exchangeOrder.users[0]]
-                .removeAtValue(exchangeId);
+            _sellerToAvailableOrders_ERC1155[exchangeOrder.users[0]].removeAtValue(exchangeId);
         } else {
             _availableExchangeOrders_ERC721.removeAtValue(exchangeId);
-            _sellerToAvailableOrders_ERC721[exchangeOrder.users[0]]
-                .removeAtValue(exchangeId);
+            _sellerToAvailableOrders_ERC721[exchangeOrder.users[0]].removeAtValue(exchangeId);
         }
     }
 }

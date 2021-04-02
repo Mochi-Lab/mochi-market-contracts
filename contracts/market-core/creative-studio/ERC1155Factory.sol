@@ -14,10 +14,7 @@ contract ERC1155Factory {
     /**
      * @dev Deploy a new ERC1155 contract
      */
-    function newERC1155Collection(address owner, string memory uri)
-        external
-        returns (address)
-    {
+    function newERC1155Collection(address owner, string memory uri) external returns (address) {
         address collectionAddress = address(new SampleERC1155(owner, uri));
 
         return collectionAddress;

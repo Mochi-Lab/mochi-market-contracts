@@ -36,19 +36,12 @@ contract Market is Initializable, ReentrancyGuard {
     uint256 internal feeDenominator;
     uint256 internal constant SAFE_NUMBER = 1e12;
 
-    event Initialized(
-        address indexed provider,
-        uint256 numerator,
-        uint256 denominator
-    );
+    event Initialized(address indexed provider, uint256 numerator, uint256 denominator);
 
     event FeeUpdated(uint256 numerator, uint256 denominator);
 
     modifier onlyMarketAdmin() {
-        require(
-            addressesProvider.getAdmin() == msg.sender,
-            Errors.CALLER_NOT_MARKET_ADMIN
-        );
+        require(addressesProvider.getAdmin() == msg.sender, Errors.CALLER_NOT_MARKET_ADMIN);
         _;
     }
 
@@ -66,16 +59,11 @@ contract Market is Initializable, ReentrancyGuard {
         uint256 numerator,
         uint256 denominator
     ) external initializer {
-        require(
-            denominator >= numerator,
-            Errors.DEMONINATOR_NOT_GREATER_THAN_NUMERATOR
-        );
+        require(denominator >= numerator, Errors.DEMONINATOR_NOT_GREATER_THAN_NUMERATOR);
         addressesProvider = IAddressesProvider(provider);
         nftList = INFTList(addressesProvider.getNFTList());
         sellOrderList = ISellOrderList(addressesProvider.getSellOrderList());
-        exchangeOrderList = IExchangeOrderList(
-            addressesProvider.getExchangeOrderList()
-        );
+        exchangeOrderList = IExchangeOrderList(addressesProvider.getExchangeOrderList());
         vault = IVault(addressesProvider.getVault());
         feeNumerator = numerator;
         feeDenominator = denominator;
@@ -112,14 +100,8 @@ contract Market is Initializable, ReentrancyGuard {
      * @param numerator The fee numerator
      * @param denominator The fee denominator
      **/
-    function updateFee(uint256 numerator, uint256 denominator)
-        external
-        onlyMarketAdmin
-    {
-        require(
-            denominator >= numerator,
-            Errors.DEMONINATOR_NOT_GREATER_THAN_NUMERATOR
-        );
+    function updateFee(uint256 numerator, uint256 denominator) external onlyMarketAdmin {
+        require(denominator >= numerator, Errors.DEMONINATOR_NOT_GREATER_THAN_NUMERATOR);
         feeNumerator = numerator;
         feeDenominator = denominator;
         emit FeeUpdated(numerator, denominator);
@@ -152,18 +134,11 @@ contract Market is Initializable, ReentrancyGuard {
                 Errors.INSUFFICIENT_BALANCE
             );
             require(
-                IERC1155(nftAddress).isApprovedForAll(
-                    msg.sender,
-                    address(this)
-                ),
+                IERC1155(nftAddress).isApprovedForAll(msg.sender, address(this)),
                 Errors.NFT_NOT_APPROVED_FOR_MARKET
             );
             require(
-                !sellOrderList.checkDuplicate_ERC1155(
-                    nftAddress,
-                    tokenId,
-                    msg.sender
-                ),
+                !sellOrderList.checkDuplicate_ERC1155(nftAddress, tokenId, msg.sender),
                 Errors.SELL_ORDER_DUPLICATE
             );
         } else {
@@ -177,22 +152,11 @@ contract Market is Initializable, ReentrancyGuard {
                 Errors.NFT_NOT_APPROVED_FOR_MARKET
             );
             require(
-                !sellOrderList.checkDuplicate_ERC721(
-                    nftAddress,
-                    tokenId,
-                    msg.sender
-                ),
+                !sellOrderList.checkDuplicate_ERC721(nftAddress, tokenId, msg.sender),
                 Errors.SELL_ORDER_DUPLICATE
             );
         }
-        sellOrderList.addSellOrder(
-            nftAddress,
-            tokenId,
-            amount,
-            msg.sender,
-            price,
-            token
-        );
+        sellOrderList.addSellOrder(nftAddress, tokenId, amount, msg.sender, price, token);
     }
 
     /**
@@ -201,8 +165,7 @@ contract Market is Initializable, ReentrancyGuard {
      * @param sellId Sell order id
      **/
     function cancleSellOrder(uint256 sellId) external nonReentrant {
-        DataTypes.SellOrder memory sellOrder =
-            sellOrderList.getSellOrderById(sellId);
+        DataTypes.SellOrder memory sellOrder = sellOrderList.getSellOrderById(sellId);
         require(sellOrder.seller == msg.sender, Errors.CALLER_NOT_SELLER);
         require(sellOrder.isActive == true, Errors.SELL_ORDER_NOT_ACTIVE);
         sellOrderList.deactiveSellOrder(sellId);
@@ -220,17 +183,13 @@ contract Market is Initializable, ReentrancyGuard {
         address receiver,
         bytes calldata data
     ) external payable nonReentrant {
-        DataTypes.SellOrder memory sellOrder =
-            sellOrderList.getSellOrderById(sellId);
+        DataTypes.SellOrder memory sellOrder = sellOrderList.getSellOrderById(sellId);
 
         require(sellOrder.seller != msg.sender, Errors.CALLER_IS_SELLER);
         require(sellOrder.isActive == true, Errors.SELL_ORDER_NOT_ACTIVE);
 
         require(amount > 0, Errors.AMOUNT_IS_ZERO);
-        require(
-            amount <= sellOrder.amount.sub(sellOrder.soldAmount),
-            Errors.AMOUNT_IS_NOT_ENOUGH
-        );
+        require(amount <= sellOrder.amount.sub(sellOrder.soldAmount), Errors.AMOUNT_IS_NOT_ENOUGH);
         uint256 price = amount.mul(sellOrder.price);
         uint256 fee = calculateFee(price);
 
@@ -247,11 +206,7 @@ contract Market is Initializable, ReentrancyGuard {
                 );
             }
         } else {
-            IERC20(sellOrder.token).transferFrom(
-                msg.sender,
-                address(this),
-                price
-            );
+            IERC20(sellOrder.token).transferFrom(msg.sender, address(this), price);
             IERC20(sellOrder.token).transfer(sellOrder.seller, price.sub(fee));
             if (fee > 0) {
                 vault.deposit(
@@ -290,8 +245,7 @@ contract Market is Initializable, ReentrancyGuard {
      * @param newPrice The new price of sell order
      **/
     function updatePrice(uint256 id, uint256 newPrice) external nonReentrant {
-        DataTypes.SellOrder memory sellOrder =
-            sellOrderList.getSellOrderById(id);
+        DataTypes.SellOrder memory sellOrder = sellOrderList.getSellOrderById(id);
         require(sellOrder.seller == msg.sender, Errors.CALLER_NOT_SELLER);
         require(sellOrder.isActive == true, Errors.SELL_ORDER_NOT_ACTIVE);
         require(sellOrder.price != newPrice, Errors.PRICE_NOT_CHANGE);
@@ -332,33 +286,23 @@ contract Market is Initializable, ReentrancyGuard {
         require(datas[0].length == 0, Errors.INVALID_CALLDATA);
 
         for (uint256 i = 0; i < nftAddresses.length; i++) {
-            require(
-                nftList.isAcceptedNFT(nftAddresses[i]),
-                Errors.NFT_NOT_ACCEPTED
-            );
+            require(nftList.isAcceptedNFT(nftAddresses[i]), Errors.NFT_NOT_ACCEPTED);
             if (nftList.isERC1155(nftAddresses[i]) == true) {
                 require(nftAmounts[i] > 0, Errors.AMOUNT_IS_ZERO);
             } else {
                 require(nftAmounts[i] == 1, Errors.AMOUNT_IS_NOT_EQUAL_ONE);
             }
             if (i > 0 && prices[i] > 0) {
-                require(
-                    acceptedToken[tokens[i]] == true,
-                    Errors.TOKEN_NOT_ACCEPTED
-                );
+                require(acceptedToken[tokens[i]] == true, Errors.TOKEN_NOT_ACCEPTED);
             }
         }
         if (nftList.isERC1155(nftAddresses[0]) == true) {
             require(
-                IERC1155(nftAddresses[0]).balanceOf(msg.sender, tokenIds[0]) >=
-                    nftAmounts[0],
+                IERC1155(nftAddresses[0]).balanceOf(msg.sender, tokenIds[0]) >= nftAmounts[0],
                 Errors.INSUFFICIENT_BALANCE
             );
             require(
-                IERC1155(nftAddresses[0]).isApprovedForAll(
-                    msg.sender,
-                    address(this)
-                ),
+                IERC1155(nftAddresses[0]).isApprovedForAll(msg.sender, address(this)),
                 Errors.NFT_NOT_APPROVED_FOR_MARKET
             );
             require(
@@ -375,16 +319,11 @@ contract Market is Initializable, ReentrancyGuard {
                 Errors.CALLER_NOT_NFT_OWNER
             );
             require(
-                IERC721(nftAddresses[0]).getApproved(tokenIds[0]) ==
-                    address(this),
+                IERC721(nftAddresses[0]).getApproved(tokenIds[0]) == address(this),
                 Errors.NFT_NOT_APPROVED_FOR_MARKET
             );
             require(
-                !exchangeOrderList.checkDuplicate_ERC721(
-                    nftAddresses[0],
-                    tokenIds[0],
-                    msg.sender
-                ),
+                !exchangeOrderList.checkDuplicate_ERC721(nftAddresses[0], tokenIds[0], msg.sender),
                 Errors.EXCHANGE_ORDER_DUPLICATE
             );
         }
@@ -430,13 +369,10 @@ contract Market is Initializable, ReentrancyGuard {
         require(exchangeOrder.users[0] != msg.sender, Errors.CALLER_IS_SELLER);
         require(exchangeOrder.isActive == true, Errors.SELL_ORDER_NOT_ACTIVE);
         require(
-            destinationId > 0 &&
-                destinationId < exchangeOrder.nftAddresses.length,
+            destinationId > 0 && destinationId < exchangeOrder.nftAddresses.length,
             Errors.INVALID_DESTINATION
         );
-        if (
-            nftList.isERC1155(exchangeOrder.nftAddresses[destinationId]) == true
-        ) {
+        if (nftList.isERC1155(exchangeOrder.nftAddresses[destinationId]) == true) {
             require(
                 IERC1155(exchangeOrder.nftAddresses[destinationId]).balanceOf(
                     msg.sender,
@@ -445,12 +381,13 @@ contract Market is Initializable, ReentrancyGuard {
                 Errors.INSUFFICIENT_BALANCE
             );
             require(
-                IERC1155(exchangeOrder.nftAddresses[destinationId])
-                    .isApprovedForAll(msg.sender, address(this)),
+                IERC1155(exchangeOrder.nftAddresses[destinationId]).isApprovedForAll(
+                    msg.sender,
+                    address(this)
+                ),
                 Errors.NFT_NOT_APPROVED_FOR_MARKET
             );
-            IERC1155(exchangeOrder.nftAddresses[destinationId])
-                .safeTransferFrom(
+            IERC1155(exchangeOrder.nftAddresses[destinationId]).safeTransferFrom(
                 msg.sender,
                 exchangeOrder.users[0],
                 exchangeOrder.tokenIds[destinationId],
@@ -497,9 +434,7 @@ contract Market is Initializable, ReentrancyGuard {
                 msg.value == exchangeOrder.prices[destinationId],
                 Errors.VALUE_NOT_EQUAL_PRICE
             );
-            payable(exchangeOrder.users[0]).transfer(
-                exchangeOrder.prices[destinationId].sub(fee)
-            );
+            payable(exchangeOrder.users[0]).transfer(exchangeOrder.prices[destinationId].sub(fee));
             if (fee > 0) {
                 vault.deposit{value: fee}(
                     exchangeOrder.nftAddresses[0],
@@ -529,11 +464,7 @@ contract Market is Initializable, ReentrancyGuard {
                 );
             }
         }
-        exchangeOrderList.completeExchangeOrder(
-            exchangeId,
-            destinationId,
-            msg.sender
-        );
+        exchangeOrderList.completeExchangeOrder(exchangeId, destinationId, msg.sender);
     }
 
     /**
@@ -552,9 +483,7 @@ contract Market is Initializable, ReentrancyGuard {
      * @return Fee of transaction
      **/
     function calculateFee(uint256 price) internal view returns (uint256) {
-        uint256 fee =
-            ((price * SAFE_NUMBER * feeNumerator) / feeDenominator) /
-                SAFE_NUMBER;
+        uint256 fee = ((price * SAFE_NUMBER * feeNumerator) / feeDenominator) / SAFE_NUMBER;
         return fee;
     }
 }

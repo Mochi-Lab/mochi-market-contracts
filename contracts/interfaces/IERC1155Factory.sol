@@ -8,7 +8,5 @@ pragma experimental ABIEncoderV2;
  * @author MochiLab
  **/
 interface IERC1155Factory {
-    function newERC1155Collection(address owner, string memory uri)
-        external
-        returns (address);
+    function newERC1155Collection(address owner, string memory uri) external returns (address);
 }

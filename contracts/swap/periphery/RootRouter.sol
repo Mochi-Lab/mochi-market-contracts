@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.6.12;
 
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 import "../factory/interfaces/IFactory.sol";
 import "./libraries/TransferHelper.sol";
 import "./libraries/MochiswapLibrary.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IWETH.sol";
 
-contract Router {
+contract RootRouter {
     using SafeMath for uint256;
 
     address public immutable factory;
@@ -46,32 +47,21 @@ contract Router {
         if (reserveA == 0 && reserveB == 0) {
             (amountA, amountB) = (amountADesired, amountBDesired);
         } else {
-            uint256 amountBOptimal =
-                MochiswapLibrary.quote(amountADesired, reserveA, reserveB);
+            uint256 amountBOptimal = MochiswapLibrary.quote(amountADesired, reserveA, reserveB);
             if (amountBOptimal <= amountBDesired) {
-                require(
-                    amountBOptimal >= amountBMin,
-                    "Router: INSUFFICIENT_B_AMOUNT"
-                );
+                require(amountBOptimal >= amountBMin, "Router: INSUFFICIENT_B_AMOUNT");
                 (amountA, amountB) = (amountADesired, amountBOptimal);
             } else {
                 uint256 amountAOptimal =
                     MochiswapLibrary.quote(amountBDesired, reserveB, reserveA);
                 assert(amountAOptimal <= amountADesired);
-                require(
-                    amountAOptimal >= amountAMin,
-                    "Router: INSUFFICIENT_A_AMOUNT"
-                );
+                require(amountAOptimal >= amountAMin, "Router: INSUFFICIENT_A_AMOUNT");
                 (amountA, amountB) = (amountAOptimal, amountBDesired);
             }
         }
     }
 
-    function getPairFor(address tokenA, address tokenB)
-        public
-        view
-        returns (address)
-    {
+    function getPairFor(address tokenA, address tokenB) public view returns (address) {
         address pair = MochiswapLibrary.pairFor(factory, tokenA, tokenB);
         return pair;
     }
@@ -154,19 +144,12 @@ contract Router {
         uint256 amountBMin,
         address to,
         uint256 deadline
-    )
-        public
-        virtual
-        ensure(deadline)
-        returns (uint256 amountA, uint256 amountB)
-    {
+    ) public virtual ensure(deadline) returns (uint256 amountA, uint256 amountB) {
         address pair = MochiswapLibrary.pairFor(factory, tokenA, tokenB);
         IPair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair
         (uint256 amount0, uint256 amount1) = IPair(pair).burn(to);
         (address token0, ) = MochiswapLibrary.sortTokens(tokenA, tokenB);
-        (amountA, amountB) = tokenA == token0
-            ? (amount0, amount1)
-            : (amount1, amount0);
+        (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
         require(amountA >= amountAMin, "Router: INSUFFICIENT_A_AMOUNT");
         require(amountB >= amountBMin, "Router: INSUFFICIENT_B_AMOUNT");
     }
@@ -178,12 +161,7 @@ contract Router {
         uint256 amountETHMin,
         address to,
         uint256 deadline
-    )
-        public
-        virtual
-        ensure(deadline)
-        returns (uint256 amountToken, uint256 amountETH)
-    {
+    ) public virtual ensure(deadline) returns (uint256 amountToken, uint256 amountETH) {
         (amountToken, amountETH) = removeLiquidity(
             token,
             WETH,
@@ -268,11 +246,7 @@ contract Router {
             address(this),
             deadline
         );
-        TransferHelper.safeTransfer(
-            token,
-            to,
-            IERC20(token).balanceOf(address(this))
-        );
+        TransferHelper.safeTransfer(token, to, IERC20(token).balanceOf(address(this)));
         IWETH(WETH).withdraw(amountETH);
         TransferHelper.safeTransferETH(to, amountETH);
     }
@@ -314,13 +288,9 @@ contract Router {
             (address token0, ) = MochiswapLibrary.sortTokens(input, output);
             uint256 amountOut = amounts[i + 1];
             (uint256 amount0Out, uint256 amount1Out) =
-                input == token0
-                    ? (uint256(0), amountOut)
-                    : (amountOut, uint256(0));
+                input == token0 ? (uint256(0), amountOut) : (amountOut, uint256(0));
             address to =
-                i < path.length - 2
-                    ? MochiswapLibrary.pairFor(factory, output, path[i + 2])
-                    : _to;
+                i < path.length - 2 ? MochiswapLibrary.pairFor(factory, output, path[i + 2]) : _to;
             IPair(MochiswapLibrary.pairFor(factory, input, output)).swap(
                 amount0Out,
                 amount1Out,
@@ -338,10 +308,7 @@ contract Router {
         uint256 deadline
     ) external virtual ensure(deadline) returns (uint256[] memory amounts) {
         amounts = MochiswapLibrary.getAmountsOut(factory, amountIn, path);
-        require(
-            amounts[amounts.length - 1] >= amountOutMin,
-            "Router: INSUFFICIENT_OUTPUT_AMOUNT"
-        );
+        require(amounts[amounts.length - 1] >= amountOutMin, "Router: INSUFFICIENT_OUTPUT_AMOUNT");
         TransferHelper.safeTransferFrom(
             path[0],
             msg.sender,
@@ -374,25 +341,13 @@ contract Router {
         address[] calldata path,
         address to,
         uint256 deadline
-    )
-        external
-        payable
-        virtual
-        ensure(deadline)
-        returns (uint256[] memory amounts)
-    {
+    ) external payable virtual ensure(deadline) returns (uint256[] memory amounts) {
         require(path[0] == WETH, "Router: INVALID_PATH");
         amounts = MochiswapLibrary.getAmountsOut(factory, msg.value, path);
-        require(
-            amounts[amounts.length - 1] >= amountOutMin,
-            "Router: INSUFFICIENT_OUTPUT_AMOUNT"
-        );
+        require(amounts[amounts.length - 1] >= amountOutMin, "Router: INSUFFICIENT_OUTPUT_AMOUNT");
         IWETH(WETH).deposit{value: amounts[0]}();
         assert(
-            IWETH(WETH).transfer(
-                MochiswapLibrary.pairFor(factory, path[0], path[1]),
-                amounts[0]
-            )
+            IWETH(WETH).transfer(MochiswapLibrary.pairFor(factory, path[0], path[1]), amounts[0])
         );
         _swap(amounts, path, to);
     }
@@ -427,10 +382,7 @@ contract Router {
     ) external virtual ensure(deadline) returns (uint256[] memory amounts) {
         require(path[path.length - 1] == WETH, "Router: INVALID_PATH");
         amounts = MochiswapLibrary.getAmountsOut(factory, amountIn, path);
-        require(
-            amounts[amounts.length - 1] >= amountOutMin,
-            "Router: INSUFFICIENT_OUTPUT_AMOUNT"
-        );
+        require(amounts[amounts.length - 1] >= amountOutMin, "Router: INSUFFICIENT_OUTPUT_AMOUNT");
         TransferHelper.safeTransferFrom(
             path[0],
             msg.sender,
@@ -447,22 +399,13 @@ contract Router {
         address[] calldata path,
         address to,
         uint256 deadline
-    )
-        external
-        payable
-        virtual
-        ensure(deadline)
-        returns (uint256[] memory amounts)
-    {
+    ) external payable virtual ensure(deadline) returns (uint256[] memory amounts) {
         require(path[0] == WETH, "Router: INVALID_PATH");
         amounts = MochiswapLibrary.getAmountsIn(factory, amountOut, path);
         require(amounts[0] <= msg.value, "Router: EXCESSIVE_INPUT_AMOUNT");
         IWETH(WETH).deposit{value: amounts[0]}();
         assert(
-            IWETH(WETH).transfer(
-                MochiswapLibrary.pairFor(factory, path[0], path[1]),
-                amounts[0]
-            )
+            IWETH(WETH).transfer(MochiswapLibrary.pairFor(factory, path[0], path[1]), amounts[0])
         );
         _swap(amounts, path, to);
         // refund dust eth, if any
@@ -472,27 +415,22 @@ contract Router {
 
     // **** SWAP (supporting fee-on-transfer tokens) ****
     // requires the initial amount to have already been sent to the first pair
-    function _swapSupportingFeeOnTransferTokens(
-        address[] memory path,
-        address _to
-    ) internal virtual {
+    function _swapSupportingFeeOnTransferTokens(address[] memory path, address _to)
+        internal
+        virtual
+    {
         for (uint256 i; i < path.length - 1; i++) {
             (address input, address output) = (path[i], path[i + 1]);
             (address token0, ) = MochiswapLibrary.sortTokens(input, output);
-            IPair pair =
-                IPair(MochiswapLibrary.pairFor(factory, input, output));
+            IPair pair = IPair(MochiswapLibrary.pairFor(factory, input, output));
             uint256 amountInput;
             uint256 amountOutput;
             {
                 // scope to avoid stack too deep errors
                 (uint256 reserve0, uint256 reserve1, ) = pair.getReserves();
                 (uint256 reserveInput, uint256 reserveOutput) =
-                    input == token0
-                        ? (reserve0, reserve1)
-                        : (reserve1, reserve0);
-                amountInput = IERC20(input).balanceOf(address(pair)).sub(
-                    reserveInput
-                );
+                    input == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
+                amountInput = IERC20(input).balanceOf(address(pair)).sub(reserveInput);
                 amountOutput = MochiswapLibrary.getAmountOut(
                     amountInput,
                     reserveInput,
@@ -500,13 +438,9 @@ contract Router {
                 );
             }
             (uint256 amount0Out, uint256 amount1Out) =
-                input == token0
-                    ? (uint256(0), amountOutput)
-                    : (amountOutput, uint256(0));
+                input == token0 ? (uint256(0), amountOutput) : (amountOutput, uint256(0));
             address to =
-                i < path.length - 2
-                    ? MochiswapLibrary.pairFor(factory, output, path[i + 2])
-                    : _to;
+                i < path.length - 2 ? MochiswapLibrary.pairFor(factory, output, path[i + 2]) : _to;
             pair.swap(amount0Out, amount1Out, to, new bytes(0));
         }
     }
@@ -527,8 +461,7 @@ contract Router {
         uint256 balanceBefore = IERC20(path[path.length - 1]).balanceOf(to);
         _swapSupportingFeeOnTransferTokens(path, to);
         require(
-            IERC20(path[path.length - 1]).balanceOf(to).sub(balanceBefore) >=
-                amountOutMin,
+            IERC20(path[path.length - 1]).balanceOf(to).sub(balanceBefore) >= amountOutMin,
             "Router: INSUFFICIENT_OUTPUT_AMOUNT"
         );
     }
@@ -543,16 +476,12 @@ contract Router {
         uint256 amountIn = msg.value;
         IWETH(WETH).deposit{value: amountIn}();
         assert(
-            IWETH(WETH).transfer(
-                MochiswapLibrary.pairFor(factory, path[0], path[1]),
-                amountIn
-            )
+            IWETH(WETH).transfer(MochiswapLibrary.pairFor(factory, path[0], path[1]), amountIn)
         );
         uint256 balanceBefore = IERC20(path[path.length - 1]).balanceOf(to);
         _swapSupportingFeeOnTransferTokens(path, to);
         require(
-            IERC20(path[path.length - 1]).balanceOf(to).sub(balanceBefore) >=
-                amountOutMin,
+            IERC20(path[path.length - 1]).balanceOf(to).sub(balanceBefore) >= amountOutMin,
             "Router: INSUFFICIENT_OUTPUT_AMOUNT"
         );
     }
@@ -573,10 +502,7 @@ contract Router {
         );
         _swapSupportingFeeOnTransferTokens(path, address(this));
         uint256 amountOut = IERC20(WETH).balanceOf(address(this));
-        require(
-            amountOut >= amountOutMin,
-            "Router: INSUFFICIENT_OUTPUT_AMOUNT"
-        );
+        require(amountOut >= amountOutMin, "Router: INSUFFICIENT_OUTPUT_AMOUNT");
         IWETH(WETH).withdraw(amountOut);
         TransferHelper.safeTransferETH(to, amountOut);
     }

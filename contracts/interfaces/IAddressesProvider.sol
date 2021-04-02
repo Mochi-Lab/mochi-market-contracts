@@ -27,15 +27,11 @@ interface IAddressesProvider {
 
     function getSellOrderList() external view returns (address);
 
-    function setSellOrderListImpl(address sellOrderList, bytes memory params)
-        external;
+    function setSellOrderListImpl(address sellOrderList, bytes memory params) external;
 
     function getExchangeOrderList() external view returns (address);
 
-    function setExchangeOrderListImpl(
-        address exchangeOrderList,
-        bytes memory params
-    ) external;
+    function setExchangeOrderListImpl(address exchangeOrderList, bytes memory params) external;
 
     function getVault() external view returns (address);
 
@@ -43,8 +39,7 @@ interface IAddressesProvider {
 
     function getCreativeStudio() external view returns (address);
 
-    function setCreativeStudioImpl(address creativeStudio, bytes memory params)
-        external;
+    function setCreativeStudioImpl(address creativeStudio, bytes memory params) external;
 
     function getAdmin() external view returns (address);
 
