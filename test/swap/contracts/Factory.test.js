@@ -36,7 +36,7 @@ describe('Factory', async () => {
     );
 
     pair = await ethers.getContractAt(
-      'Pair',
+      'MochiswapPair',
       await factory.getPair(tokenA.address, tokenB.address)
     );
 

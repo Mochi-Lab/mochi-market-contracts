@@ -37,8 +37,7 @@ contract Vault is Initializable, ReentrancyGuard {
 
     // User's reward token balance
     // user address => rewardToken address => balance
-    mapping(address => mapping(address => uint256))
-        internal _rewardTokenBalance;
+    mapping(address => mapping(address => uint256)) internal _rewardTokenBalance;
 
     // Duration of a halving cycle of a reward event
     uint256 internal _periodOfCycle;
@@ -64,11 +63,7 @@ contract Vault is Initializable, ReentrancyGuard {
         string nativeToken
     );
     event RoyaltyUpdated(uint256 numerator, uint256 denominator);
-    event WithdrawFund(
-        address indexed token,
-        uint256 amount,
-        address indexed receiver
-    );
+    event WithdrawFund(address indexed token, uint256 amount, address indexed receiver);
     event Deposit(
         address indexed nftAddress,
         address indexed seller,
@@ -97,18 +92,12 @@ contract Vault is Initializable, ReentrancyGuard {
     );
 
     modifier onlyMarketAdmin() {
-        require(
-            addressesProvider.getAdmin() == msg.sender,
-            Errors.CALLER_NOT_MARKET_ADMIN
-        );
+        require(addressesProvider.getAdmin() == msg.sender, Errors.CALLER_NOT_MARKET_ADMIN);
         _;
     }
 
     modifier onlyMarket() {
-        require(
-            addressesProvider.getMarket() == msg.sender,
-            Errors.CALLER_NOT_MARKET
-        );
+        require(addressesProvider.getMarket() == msg.sender, Errors.CALLER_NOT_MARKET);
         _;
     }
 
@@ -127,21 +116,16 @@ contract Vault is Initializable, ReentrancyGuard {
         uint256 denominator,
         string memory nativeToken
     ) external initializer {
-        require(
-            denominator >= numerator,
-            Errors.DEMONINATOR_NOT_GREATER_THAN_NUMERATOR
-        );
+        require(denominator >= numerator, Errors.DEMONINATOR_NOT_GREATER_THAN_NUMERATOR);
 
         _royaltyNumerator = numerator;
         _royaltyDenominator = denominator;
         addressesProvider = IAddressesProvider(provider);
 
-        string memory name =
-            string(abi.encodePacked("rMOCHI for: ", nativeToken));
+        string memory name = string(abi.encodePacked("rMOCHI for: ", nativeToken));
         string memory symbol = string(abi.encodePacked("rMOCHI_", nativeToken));
 
-        MochiRewardToken rewardTokenForNativeToken =
-            new MochiRewardToken(name, symbol);
+        MochiRewardToken rewardTokenForNativeToken = new MochiRewardToken(name, symbol);
         _tokenToRewardToken[address(0)] = address(rewardTokenForNativeToken);
 
         emit Initialized(provider, numerator, denominator, nativeToken);
@@ -149,10 +133,8 @@ contract Vault is Initializable, ReentrancyGuard {
 
     function setupRewardToken(address token) external onlyMarket {
         if (_tokenToRewardToken[token] == address(0)) {
-            string memory name =
-                string(abi.encodePacked("rMOCHI for ", ERC20(token).name()));
-            string memory symbol =
-                string(abi.encodePacked("rMOCHI_", ERC20(token).symbol()));
+            string memory name = string(abi.encodePacked("rMOCHI for ", ERC20(token).name()));
+            string memory symbol = string(abi.encodePacked("rMOCHI_", ERC20(token).symbol()));
             MochiRewardToken newReward = new MochiRewardToken(name, symbol);
             _tokenToRewardToken[token] = address(newReward);
         }
@@ -184,8 +166,7 @@ contract Vault is Initializable, ReentrancyGuard {
         uint256 forRoyalty = calculateRoyalty(amount);
 
         if (forRoyalty > 0) {
-            _nftToRoyalty[nftAddress][token] = _nftToRoyalty[nftAddress][token]
-                .add(forRoyalty);
+            _nftToRoyalty[nftAddress][token] = _nftToRoyalty[nftAddress][token].add(forRoyalty);
         }
 
         _mochiFund[token] = _mochiFund[token].add(amount - forRoyalty);
@@ -195,13 +176,9 @@ contract Vault is Initializable, ReentrancyGuard {
             uint256 rewardTokenAmount = (amount.mul(currentRate)).div(1e18);
             if (rewardTokenAmount > 0) {
                 address rewardToken = _tokenToRewardToken[token];
-                _rewardTokenBalance[seller][rewardToken] = _rewardTokenBalance[
-                    rewardToken
-                ][seller]
+                _rewardTokenBalance[seller][rewardToken] = _rewardTokenBalance[rewardToken][seller]
                     .add(rewardTokenAmount);
-                _rewardTokenBalance[buyer][rewardToken] = _rewardTokenBalance[
-                    rewardToken
-                ][seller]
+                _rewardTokenBalance[buyer][rewardToken] = _rewardTokenBalance[rewardToken][seller]
                     .add(rewardTokenAmount);
             }
         }
@@ -248,18 +225,10 @@ contract Vault is Initializable, ReentrancyGuard {
         uint256 amount,
         address payable receiver
     ) external nonReentrant {
-        require(
-            _nftToRoyalty[nftAddress][token] >= amount,
-            Errors.INSUFFICIENT_BALANCE
-        );
-        require(
-            msg.sender == Ownable(nftAddress).owner(),
-            Errors.CALLER_NOT_CONTRACT_OWNER
-        );
+        require(_nftToRoyalty[nftAddress][token] >= amount, Errors.INSUFFICIENT_BALANCE);
+        require(msg.sender == Ownable(nftAddress).owner(), Errors.CALLER_NOT_CONTRACT_OWNER);
 
-        _nftToRoyalty[nftAddress][token] = _nftToRoyalty[nftAddress][token].sub(
-            amount
-        );
+        _nftToRoyalty[nftAddress][token] = _nftToRoyalty[nftAddress][token].sub(amount);
 
         if (token == address(0)) {
             receiver.transfer(amount);
@@ -283,14 +252,11 @@ contract Vault is Initializable, ReentrancyGuard {
         address receiver
     ) external nonReentrant {
         require(
-            _rewardTokenBalance[msg.sender][rewardToken] >= amount &&
-                amount >= 0,
+            _rewardTokenBalance[msg.sender][rewardToken] >= amount && amount >= 0,
             Errors.INSUFFICIENT_BALANCE
         );
 
-        _rewardTokenBalance[msg.sender][rewardToken] = _rewardTokenBalance[
-            msg.sender
-        ][rewardToken]
+        _rewardTokenBalance[msg.sender][rewardToken] = _rewardTokenBalance[msg.sender][rewardToken]
             .sub(amount);
 
         MochiRewardToken(rewardToken).mint(receiver, amount);
@@ -312,22 +278,14 @@ contract Vault is Initializable, ReentrancyGuard {
         _firstRate = firstRate;
         _rewardIsActive = true;
 
-        emit SetupRewardParameters(
-            periodOfCycle,
-            numberOfCycle,
-            startTime,
-            firstRate
-        );
+        emit SetupRewardParameters(periodOfCycle, numberOfCycle, startTime, firstRate);
     }
 
     function updateRoyaltyParameters(uint256 numerator, uint256 denominator)
         external
         onlyMarketAdmin
     {
-        require(
-            denominator >= numerator,
-            Errors.DEMONINATOR_NOT_GREATER_THAN_NUMERATOR
-        );
+        require(denominator >= numerator, Errors.DEMONINATOR_NOT_GREATER_THAN_NUMERATOR);
 
         _royaltyNumerator = numerator;
         _royaltyDenominator = denominator;
@@ -340,9 +298,7 @@ contract Vault is Initializable, ReentrancyGuard {
 
         if (currentPeriod == 0) {
             return _firstRate;
-        } else if (
-            2 ^ currentPeriod > _firstRate || currentPeriod > _numberOfCycle
-        ) {
+        } else if (2 ^ currentPeriod > _firstRate || currentPeriod > _numberOfCycle) {
             return 0;
         } else {
             return _firstRate.div(2 ^ currentPeriod);
@@ -357,11 +313,7 @@ contract Vault is Initializable, ReentrancyGuard {
         return _tokenToRewardToken[token];
     }
 
-    function getRoyalty(address nftAddress, address token)
-        external
-        view
-        returns (uint256)
-    {
+    function getRoyalty(address nftAddress, address token) external view returns (uint256) {
         return _nftToRoyalty[nftAddress][token];
     }
 
@@ -391,8 +343,7 @@ contract Vault is Initializable, ReentrancyGuard {
 
     function calculateRoyalty(uint256 amount) internal view returns (uint256) {
         uint256 royaltyAmount =
-            ((amount * SAFE_NUMBER * _royaltyNumerator) / _royaltyDenominator) /
-                SAFE_NUMBER;
+            ((amount * SAFE_NUMBER * _royaltyNumerator) / _royaltyDenominator) / SAFE_NUMBER;
         return royaltyAmount;
     }
 }

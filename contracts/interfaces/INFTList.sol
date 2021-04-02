@@ -7,9 +7,9 @@ pragma solidity 0.6.12;
  * @author MochiLab
  **/
 interface INFTList {
-  function isAcceptedNFT(address nftAdress) external view returns (bool);
+    function isAcceptedNFT(address nftAdress) external view returns (bool);
 
-  function addNFTDirectly(address nftAddress, bool isERC1155) external;
+    function addNFTDirectly(address nftAddress, bool isERC1155) external;
 
-  function isERC1155(address nftAddress) external view returns (bool);
+    function isERC1155(address nftAddress) external view returns (bool);
 }

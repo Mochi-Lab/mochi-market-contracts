@@ -13,50 +13,42 @@ contract WrappedERC1155 is ERC20, ERC1155Receiver {
     using SafeMath for uint256;
     using Strings for uint256;
 
-    address public _erc1155;
-    uint256 public _tokenId;
-    uint256 public unit = 1 ether;
+    address public erc1155;
+    uint256 public tokenId;
+    uint256 public unit = 1e18;
 
-    constructor(address erc1155_, uint256 tokenId_)
+    constructor(address _erc1155, uint256 _tokenId)
         public
         ERC1155Receiver()
         ERC20(
             string(
                 abi.encodePacked(
                     "Wrapped ERC1155: ",
-                    ERC1155(erc1155_).uri(0),
+                    ERC1155(_erc1155).uri(0),
                     " - TokenId: ",
-                    tokenId_.toString()
+                    _tokenId.toString()
                 )
             ),
             string(
-                abi.encodePacked(
-                    "WERC1155-",
-                    ERC1155(erc1155_).uri(0),
-                    "-",
-                    tokenId_.toString()
-                )
+                abi.encodePacked("WERC1155-", ERC1155(_erc1155).uri(0), "-", _tokenId.toString())
             )
         )
     {
-        _erc1155 = erc1155_;
-        _tokenId = tokenId_;
+        erc1155 = _erc1155;
+        tokenId = _tokenId;
     }
 
     function deposit(
         address to,
         uint256 amount,
         bytes memory data
-    ) public {
-        ERC1155(_erc1155).safeTransferFrom(
-            msg.sender,
-            address(this),
-            _tokenId,
-            amount,
-            data
-        );
+    ) public returns (uint256) {
+        ERC1155(erc1155).safeTransferFrom(msg.sender, address(this), tokenId, amount, data);
 
-        _mint(to, amount.mul(unit));
+        uint256 amountMint = amount.mul(unit);
+        _mint(to, amountMint);
+
+        return amountMint;
     }
 
     function withdraw(
@@ -64,13 +56,7 @@ contract WrappedERC1155 is ERC20, ERC1155Receiver {
         uint256 amount,
         bytes memory data
     ) public {
-        ERC1155(_erc1155).safeTransferFrom(
-            address(this),
-            to,
-            _tokenId,
-            amount,
-            data
-        );
+        ERC1155(erc1155).safeTransferFrom(address(this), to, tokenId, amount, data);
 
         _burn(msg.sender, amount.mul(unit));
     }
@@ -82,12 +68,7 @@ contract WrappedERC1155 is ERC20, ERC1155Receiver {
         uint256 value,
         bytes calldata data
     ) external override returns (bytes4) {
-        return
-            bytes4(
-                keccak256(
-                    "onERC1155Received(address,address,uint256,uint256,bytes)"
-                )
-            );
+        return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
     }
 
     function onERC1155BatchReceived(
@@ -98,10 +79,6 @@ contract WrappedERC1155 is ERC20, ERC1155Receiver {
         bytes calldata data
     ) external override returns (bytes4) {
         return
-            bytes4(
-                keccak256(
-                    "onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"
-                )
-            );
+            bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"));
     }
 }

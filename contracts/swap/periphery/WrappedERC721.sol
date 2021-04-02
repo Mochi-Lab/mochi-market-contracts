@@ -28,12 +28,7 @@ contract WrappedERC721 is ERC20, Initializable {
                 )
             ),
             string(
-                abi.encodePacked(
-                    "WERC721-",
-                    ERC721(_erc721).symbol(),
-                    "-",
-                    _tokenId.toString()
-                )
+                abi.encodePacked("WERC721-", ERC721(_erc721).symbol(), "-", _tokenId.toString())
             )
         )
     {
@@ -52,9 +47,6 @@ contract WrappedERC721 is ERC20, Initializable {
         uint256 tokenId,
         bytes calldata data
     ) external pure returns (bytes4) {
-        return
-            bytes4(
-                keccak256("onERC721Received(address,address,uint256,bytes)")
-            );
+        return bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"));
     }
 }

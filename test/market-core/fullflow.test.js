@@ -24,7 +24,9 @@ describe('Full flow', async () => {
     [deployer, marketAdmin, user, anotherUser] = await ethers.getSigners();
 
     // deploy AddressesProvider contract
-    let AddressesProvider = await ethers.getContractFactory('AddressesProvider');
+    let AddressesProvider = await ethers.getContractFactory(
+      'AddressesProvider'
+    );
     addressesProvider = await AddressesProvider.connect(deployer).deploy();
 
     // call setAdmin() of AddressProvider contract
@@ -36,14 +38,19 @@ describe('Full flow', async () => {
 
     // get initData of NFTList contract
     let initData = nftListImpl.interface.encodeFunctionData('initialize', [
-      addressesProvider.address
+      addressesProvider.address,
     ]);
 
     // call function setNFTListImpl() of AddressesProvider contract
-    await addressesProvider.connect(deployer).setNFTListImpl(nftListImpl.address, initData);
+    await addressesProvider
+      .connect(deployer)
+      .setNFTListImpl(nftListImpl.address, initData);
 
     // create a NFTList instance at result of getNFTList()
-    nftListProxy = await ethers.getContractAt('NFTList', await addressesProvider.getNFTList());
+    nftListProxy = await ethers.getContractAt(
+      'NFTList',
+      await addressesProvider.getNFTList()
+    );
 
     // deploy an implementation of Vault contract
     let Vault = await ethers.getContractFactory('Vault');
@@ -54,14 +61,19 @@ describe('Full flow', async () => {
       addressesProvider.address,
       '20',
       '100',
-      'ETH'
+      'ETH',
     ]);
 
     // call function setVaultImpl() of AddressesProvider contract
-    await addressesProvider.connect(deployer).setVaultImpl(vaultImpl.address, initData);
+    await addressesProvider
+      .connect(deployer)
+      .setVaultImpl(vaultImpl.address, initData);
 
     // create a Vault instance at result of getVault()
-    vaultProxy = await ethers.getContractAt('Vault', await addressesProvider.getVault());
+    vaultProxy = await ethers.getContractAt(
+      'Vault',
+      await addressesProvider.getVault()
+    );
 
     await vaultProxy
       .connect(marketAdmin)
@@ -73,7 +85,7 @@ describe('Full flow', async () => {
 
     // get initData of SellOrderList contract
     initData = sellOrderListImpl.interface.encodeFunctionData('initialize', [
-      addressesProvider.address
+      addressesProvider.address,
     ]);
 
     // call function setSellOrderListImpl() of AddressesProvider contract
@@ -88,13 +100,18 @@ describe('Full flow', async () => {
     );
 
     // deploy an implementation of ExchangeOrderList contract
-    let ExchangeOrderList = await ethers.getContractFactory('ExchangeOrderList');
-    let exchangeOrderListImpl = await ExchangeOrderList.connect(deployer).deploy();
+    let ExchangeOrderList = await ethers.getContractFactory(
+      'ExchangeOrderList'
+    );
+    let exchangeOrderListImpl = await ExchangeOrderList.connect(
+      deployer
+    ).deploy();
 
     // get initData of ExchangeOrderList contract
-    initData = exchangeOrderListImpl.interface.encodeFunctionData('initialize', [
-      addressesProvider.address
-    ]);
+    initData = exchangeOrderListImpl.interface.encodeFunctionData(
+      'initialize',
+      [addressesProvider.address]
+    );
 
     // call function setExchangeOrderListImpl() of AddressesProvider contract
     await addressesProvider
@@ -121,7 +138,7 @@ describe('Full flow', async () => {
     initData = creativeStudioImpl.interface.encodeFunctionData('initialize', [
       addressesProvider.address,
       erc721Factory.address,
-      erc1155Factory.address
+      erc1155Factory.address,
     ]);
 
     // call function setCreativeStudioImpl() of AddressesProvider contract
@@ -143,18 +160,26 @@ describe('Full flow', async () => {
     initData = marketImpl.interface.encodeFunctionData('initialize', [
       addressesProvider.address,
       2,
-      1000
+      1000,
     ]);
 
     // call function setMarketImpl() of AddressesProvider contract
-    await addressesProvider.connect(deployer).setMarketImpl(marketImpl.address, initData);
+    await addressesProvider
+      .connect(deployer)
+      .setMarketImpl(marketImpl.address, initData);
 
     // create a Market instance at result of getMarket()
-    marketProxy = await ethers.getContractAt('Market', await addressesProvider.getMarket());
+    marketProxy = await ethers.getContractAt(
+      'Market',
+      await addressesProvider.getMarket()
+    );
 
     // deploy TestERC721 contract
     let TestERC721 = await ethers.getContractFactory('TestERC721');
-    testERC721 = await TestERC721.connect(deployer).deploy('TestERC721', 'TestERC721');
+    testERC721 = await TestERC721.connect(deployer).deploy(
+      'TestERC721',
+      'TestERC721'
+    );
 
     // deploy TestERC1155 contract
     let TestERC1155 = await ethers.getContractFactory('TestERC1155');
@@ -178,29 +203,58 @@ describe('Full flow', async () => {
     await testERC721.connect(deployer).mint(user.address, tokenId);
     await testERC721.connect(user).approve(marketProxy.address, tokenId);
     console.log('\n\n\n===========Before buy==========\n');
-    console.log('Vault Fund: ', parseInt(await vaultProxy.getMochiFund(ETH_Address)));
+    console.log(
+      'Vault Fund: ',
+      parseInt(await vaultProxy.getMochiFund(ETH_Address))
+    );
     // console.log(user);
-    console.log('Seller balance: ', parseInt(await ethers.provider.getBalance(user.address)));
-    console.log('Buyer balance: ', parseInt(await ethers.provider.getBalance(anotherUser.address)));
-    console.log('Vault balance: ', parseInt(await ethers.provider.getBalance(vaultProxy.address)));
+    console.log(
+      'Seller balance: ',
+      parseInt(await ethers.provider.getBalance(user.address))
+    );
+    console.log(
+      'Buyer balance: ',
+      parseInt(await ethers.provider.getBalance(anotherUser.address))
+    );
+    console.log(
+      'Vault balance: ',
+      parseInt(await ethers.provider.getBalance(vaultProxy.address))
+    );
     console.log('Owner of NFT ', await testERC721.ownerOf(tokenId));
     await marketProxy
       .connect(user)
       .createSellOrder(testERC721.address, tokenId, '1', price, ETH_Address);
 
-    let data = await sellOrderListProxy.getLatestSellId_ERC721(testERC721.address, tokenId);
+    let data = await sellOrderListProxy.getLatestSellId_ERC721(
+      testERC721.address,
+      tokenId
+    );
     expect(data.found).to.be.equal(true);
     sellId = data.id;
 
     console.log(await sellOrderListProxy.getSellOrderById(sellId));
     await marketProxy
       .connect(anotherUser)
-      .buy(sellId, '1', anotherUser.address, '0x', { value: '1000000000000000000' });
+      .buy(sellId, '1', anotherUser.address, '0x', {
+        value: '1000000000000000000',
+      });
     console.log('\n\n\n==========After buy==========\n');
-    console.log('Vault Fund: ', parseInt(await vaultProxy.getMochiFund(ETH_Address)));
-    console.log('Seller balance: ', parseInt(await ethers.provider.getBalance(user.address)));
-    console.log('Buyer balance: ', parseInt(await ethers.provider.getBalance(anotherUser.address)));
-    console.log('Vault balance: ', parseInt(await ethers.provider.getBalance(vaultProxy.address)));
+    console.log(
+      'Vault Fund: ',
+      parseInt(await vaultProxy.getMochiFund(ETH_Address))
+    );
+    console.log(
+      'Seller balance: ',
+      parseInt(await ethers.provider.getBalance(user.address))
+    );
+    console.log(
+      'Buyer balance: ',
+      parseInt(await ethers.provider.getBalance(anotherUser.address))
+    );
+    console.log(
+      'Vault balance: ',
+      parseInt(await ethers.provider.getBalance(vaultProxy.address))
+    );
     console.log('Owner of NFT ', await testERC721.ownerOf(tokenId));
     let sellOrder = await sellOrderListProxy.getSellOrderById('0');
     console.log('\n\n\n==========Sell Order Infor==========');
@@ -220,7 +274,10 @@ describe('Full flow', async () => {
       'The amount of mochi reward token for ETH of buyer: ',
       parseInt(await mochiRewardToken_ETH.balanceOf(anotherUser.address))
     );
-    console.log('Current period: ', parseInt(await vaultProxy.getCurrentPeriod()));
+    console.log(
+      'Current period: ',
+      parseInt(await vaultProxy.getCurrentPeriod())
+    );
     console.log(
       'The royalty amount of erc: ',
       parseInt(await vaultProxy.getRoyalty(testERC721.address, ETH_Address))
@@ -232,15 +289,34 @@ describe('Full flow', async () => {
     await nftListProxy.connect(user).registerNFT(testERC1155.address, true);
     // admin accepte testERC1155
     await nftListProxy.connect(marketAdmin).acceptNFT(testERC1155.address);
-    await testERC1155.connect(deployer).mint(user.address, tokenId, amount, '0x');
-    await testERC1155.connect(user).setApprovalForAll(marketProxy.address, true);
+    await testERC1155
+      .connect(deployer)
+      .mint(user.address, tokenId, amount, '0x');
+    await testERC1155
+      .connect(user)
+      .setApprovalForAll(marketProxy.address, true);
     console.log('\n\n\n===========Before buy==========\n');
-    console.log('Vault Fund: ', parseInt(await vaultProxy.getMochiFund(ETH_Address)));
+    console.log(
+      'Vault Fund: ',
+      parseInt(await vaultProxy.getMochiFund(ETH_Address))
+    );
     // console.log(user);
-    console.log('Seller balance: ', parseInt(await ethers.provider.getBalance(user.address)));
-    console.log('Buyer balance: ', parseInt(await ethers.provider.getBalance(anotherUser.address)));
-    console.log('Vault balance: ', parseInt(await ethers.provider.getBalance(vaultProxy.address)));
-    console.log('User NFT balance ', parseInt(await testERC1155.balanceOf(user.address, tokenId)));
+    console.log(
+      'Seller balance: ',
+      parseInt(await ethers.provider.getBalance(user.address))
+    );
+    console.log(
+      'Buyer balance: ',
+      parseInt(await ethers.provider.getBalance(anotherUser.address))
+    );
+    console.log(
+      'Vault balance: ',
+      parseInt(await ethers.provider.getBalance(vaultProxy.address))
+    );
+    console.log(
+      'User NFT balance ',
+      parseInt(await testERC1155.balanceOf(user.address, tokenId))
+    );
     await marketProxy
       .connect(user)
       .createSellOrder(testERC1155.address, tokenId, '5', price, ETH_Address);
@@ -268,13 +344,30 @@ describe('Full flow', async () => {
     console.log('\n\n');
     await marketProxy
       .connect(anotherUser)
-      .buy(sellId, '3', anotherUser.address, '0x', { value: '3000000000000000000' });
+      .buy(sellId, '3', anotherUser.address, '0x', {
+        value: '3000000000000000000',
+      });
     console.log('\n\n\n==========After buy==========\n');
-    console.log('Vault Fund: ', parseInt(await vaultProxy.getMochiFund(ETH_Address)));
-    console.log('Seller balance: ', parseInt(await ethers.provider.getBalance(user.address)));
-    console.log('Buyer balance: ', parseInt(await ethers.provider.getBalance(anotherUser.address)));
-    console.log('Vault balance: ', parseInt(await ethers.provider.getBalance(vaultProxy.address)));
-    console.log('User NFT balance ', parseInt(await testERC1155.balanceOf(user.address, tokenId)));
+    console.log(
+      'Vault Fund: ',
+      parseInt(await vaultProxy.getMochiFund(ETH_Address))
+    );
+    console.log(
+      'Seller balance: ',
+      parseInt(await ethers.provider.getBalance(user.address))
+    );
+    console.log(
+      'Buyer balance: ',
+      parseInt(await ethers.provider.getBalance(anotherUser.address))
+    );
+    console.log(
+      'Vault balance: ',
+      parseInt(await ethers.provider.getBalance(vaultProxy.address))
+    );
+    console.log(
+      'User NFT balance ',
+      parseInt(await testERC1155.balanceOf(user.address, tokenId))
+    );
     console.log(
       'AnotherUser NFT balance ',
       parseInt(await testERC1155.balanceOf(anotherUser.address, tokenId))
@@ -300,7 +393,10 @@ describe('Full flow', async () => {
       'The amount of mochi reward token for ETH of buyer: ',
       parseInt(await mochiRewardToken_ETH.balanceOf(anotherUser.address))
     );
-    console.log('Current period: ', parseInt(await vaultProxy.getCurrentPeriod()));
+    console.log(
+      'Current period: ',
+      parseInt(await vaultProxy.getCurrentPeriod())
+    );
     console.log(
       'The royalty amount of erc: ',
       parseInt(await vaultProxy.getRoyalty(testERC721.address, ETH_Address))
@@ -317,21 +413,44 @@ describe('Full flow', async () => {
     await testERC721.connect(user).approve(marketProxy.address, tokenId);
 
     // user register testERC1155
-    await nftListProxy.connect(anotherUser).registerNFT(testERC1155.address, true);
+    await nftListProxy
+      .connect(anotherUser)
+      .registerNFT(testERC1155.address, true);
     // admin accepte testERC1155
     await nftListProxy.connect(marketAdmin).acceptNFT(testERC1155.address);
-    await testERC1155.connect(deployer).mint(anotherUser.address, destinationTokenId, amount, '0x');
-    await testERC1155.connect(anotherUser).setApprovalForAll(marketProxy.address, true);
+    await testERC1155
+      .connect(deployer)
+      .mint(anotherUser.address, destinationTokenId, amount, '0x');
+    await testERC1155
+      .connect(anotherUser)
+      .setApprovalForAll(marketProxy.address, true);
 
     console.log('\n\n\n===========Before exchange==========\n');
-    console.log('Vault Fund: ', parseInt(await vaultProxy.getMochiFund(ETH_Address)));
-    console.log('Seller balance: ', parseInt(await ethers.provider.getBalance(user.address)));
-    console.log('Buyer balance: ', parseInt(await ethers.provider.getBalance(anotherUser.address)));
-    console.log('Vault balance: ', parseInt(await ethers.provider.getBalance(vaultProxy.address)));
-    console.log('Owner of source NFT_ERC721 ', await testERC721.ownerOf(tokenId));
+    console.log(
+      'Vault Fund: ',
+      parseInt(await vaultProxy.getMochiFund(ETH_Address))
+    );
+    console.log(
+      'Seller balance: ',
+      parseInt(await ethers.provider.getBalance(user.address))
+    );
+    console.log(
+      'Buyer balance: ',
+      parseInt(await ethers.provider.getBalance(anotherUser.address))
+    );
+    console.log(
+      'Vault balance: ',
+      parseInt(await ethers.provider.getBalance(vaultProxy.address))
+    );
+    console.log(
+      'Owner of source NFT_ERC721 ',
+      await testERC721.ownerOf(tokenId)
+    );
     console.log(
       'Anotheruser NFT_ERC1155 balance',
-      parseInt(await testERC1155.balanceOf(anotherUser.address, destinationTokenId))
+      parseInt(
+        await testERC1155.balanceOf(anotherUser.address, destinationTokenId)
+      )
     );
 
     await marketProxy
@@ -351,14 +470,31 @@ describe('Full flow', async () => {
       .exchange('0', '1', anotherUser.address, '0x', { value: price });
 
     console.log('\n\n\n==========After Exchange==========\n');
-    console.log('Vault Fund: ', parseInt(await vaultProxy.getMochiFund(ETH_Address)));
-    console.log('Seller balance: ', parseInt(await ethers.provider.getBalance(user.address)));
-    console.log('Buyer balance: ', parseInt(await ethers.provider.getBalance(anotherUser.address)));
-    console.log('Vault balance: ', parseInt(await ethers.provider.getBalance(vaultProxy.address)));
-    console.log('Owner of source NFT_ERC721 ', await testERC721.ownerOf(tokenId));
+    console.log(
+      'Vault Fund: ',
+      parseInt(await vaultProxy.getMochiFund(ETH_Address))
+    );
+    console.log(
+      'Seller balance: ',
+      parseInt(await ethers.provider.getBalance(user.address))
+    );
+    console.log(
+      'Buyer balance: ',
+      parseInt(await ethers.provider.getBalance(anotherUser.address))
+    );
+    console.log(
+      'Vault balance: ',
+      parseInt(await ethers.provider.getBalance(vaultProxy.address))
+    );
+    console.log(
+      'Owner of source NFT_ERC721 ',
+      await testERC721.ownerOf(tokenId)
+    );
     console.log(
       'Anotheruser NFT_ERC1155 balance',
-      parseInt(await testERC1155.balanceOf(anotherUser.address, destinationTokenId))
+      parseInt(
+        await testERC1155.balanceOf(anotherUser.address, destinationTokenId)
+      )
     );
     console.log(
       'User NFT_ERC1155 balance',
@@ -370,6 +506,8 @@ describe('Full flow', async () => {
     await creativeStudioProxy
       .connect(user)
       .createERC721Collection('Collection 1', 'C-1', 'C-1-Uri');
-    await creativeStudioProxy.connect(user).createERC1155Collection('collection-uri');
+    await creativeStudioProxy
+      .connect(user)
+      .createERC1155Collection('collection-uri');
   });
 });

@@ -2,7 +2,11 @@
 
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
-const { deployAddressesProvider, allSetup, deployTestERC721 } = require('../helpers');
+const {
+  deployAddressesProvider,
+  allSetup,
+  deployTestERC721,
+} = require('../helpers');
 const { ERRORS } = require('../constans');
 
 describe('NFTList', async () => {
@@ -14,13 +18,20 @@ describe('NFTList', async () => {
 
     addressesProvider = await deployAddressesProvider(deployer);
 
-    let result = await allSetup(deployer, addressesProvider, deployer, marketAdmin);
+    let result = await allSetup(
+      deployer,
+      addressesProvider,
+      deployer,
+      marketAdmin
+    );
     addressesProvider = result.addressesProvider;
     nftListProxy = result.nftListProxy;
   });
 
   it('All setup successfully', async () => {
-    expect(await nftListProxy.addressesProvider()).to.equal(addressesProvider.address);
+    expect(await nftListProxy.addressesProvider()).to.equal(
+      addressesProvider.address
+    );
     expect(await addressesProvider.getNFTList()).to.equal(nftListProxy.address);
     expect(await addressesProvider.getAdmin()).to.equal(marketAdmin.address);
   });
@@ -47,13 +58,17 @@ describe('NFTList', async () => {
     });
 
     it('Only admin can accept nft', async () => {
-      await expect(nftListProxy.connect(user).acceptNFT(testERC721.address)).to.be.revertedWith(
-        ERRORS.CALLER_NOT_MARKET_ADMIN
-      );
+      await expect(
+        nftListProxy.connect(user).acceptNFT(testERC721.address)
+      ).to.be.revertedWith(ERRORS.CALLER_NOT_MARKET_ADMIN);
     });
 
     it('Accept fail with a unregistered nft', async () => {
-      let testERC721_2 = await deployTestERC721(user, 'TestERC721_2', 'TestERC721_2');
+      let testERC721_2 = await deployTestERC721(
+        user,
+        'TestERC721_2',
+        'TestERC721_2'
+      );
       await expect(
         nftListProxy.connect(marketAdmin).acceptNFT(testERC721_2.address)
       ).to.be.revertedWith(ERRORS.NFT_NOT_REGISTERED);
@@ -63,7 +78,9 @@ describe('NFTList', async () => {
       await nftListProxy.connect(marketAdmin).acceptNFT(testERC721.address);
       let data = await nftListProxy.getNFTInfor(testERC721.address);
       expect(data.isAccepted).to.equal(true);
-      expect(await nftListProxy.getAcceptedNFTs()).to.include(testERC721.address);
+      expect(await nftListProxy.getAcceptedNFTs()).to.include(
+        testERC721.address
+      );
     });
 
     it('Accept fail with accepted nft', async () => {

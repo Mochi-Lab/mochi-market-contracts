@@ -52,10 +52,7 @@ library ExchangeOrderLogic {
      * @param exchangeOrder Exchange order object
      * @param time Time
      */
-    function addTimestamp(
-        DataTypes.ExchangeOrder storage exchangeOrder,
-        uint256 time
-    ) internal {
+    function addTimestamp(DataTypes.ExchangeOrder storage exchangeOrder, uint256 time) internal {
         exchangeOrder.times.push(time);
     }
 
@@ -72,10 +69,7 @@ library ExchangeOrderLogic {
      * @param exchangeOrder exchange order object
      * @param buyer address of the person who closes the exchange order
      **/
-    function complete(
-        DataTypes.ExchangeOrder storage exchangeOrder,
-        address buyer
-    ) internal {
+    function complete(DataTypes.ExchangeOrder storage exchangeOrder, address buyer) internal {
         exchangeOrder.isActive = false;
         exchangeOrder.times.push(block.timestamp);
         exchangeOrder.users.push(buyer);

@@ -19,10 +19,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 abstract contract Ownable {
     address private _owner;
 
-    event OwnershipTransferred(
-        address indexed previousOwner,
-        address indexed newOwner
-    );
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
@@ -64,10 +61,7 @@ abstract contract Ownable {
      * Can only be called by the current owner.
      */
     function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(
-            newOwner != address(0),
-            "Ownable: new owner is the zero address"
-        );
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
         emit OwnershipTransferred(_owner, newOwner);
         _owner = newOwner;
     }
@@ -77,11 +71,7 @@ abstract contract Ownable {
 contract SampleERC1155 is ERC1155, Ownable {
     using Counters for Counters.Counter;
 
-    constructor(address owner_, string memory uri_)
-        public
-        ERC1155(uri_)
-        Ownable(owner_)
-    {}
+    constructor(address owner_, string memory uri_) public ERC1155(uri_) Ownable(owner_) {}
 
     function mint(
         address _account,
@@ -105,9 +95,7 @@ contract SampleERC1155 is ERC1155, Ownable {
         _burn(msg.sender, id, amount);
     }
 
-    function burnBatch(uint256[] memory ids, uint256[] memory amounts)
-        external
-    {
+    function burnBatch(uint256[] memory ids, uint256[] memory amounts) external {
         _burnBatch(msg.sender, ids, amounts);
     }
 

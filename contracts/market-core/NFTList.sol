@@ -36,10 +36,7 @@ contract NFTList is Initializable {
     event NFTAdded(address indexed nftAddress, bool erc1155);
 
     modifier onlyMarketAdmin() {
-        require(
-            addressesProvider.getAdmin() == msg.sender,
-            Errors.CALLER_NOT_MARKET_ADMIN
-        );
+        require(addressesProvider.getAdmin() == msg.sender, Errors.CALLER_NOT_MARKET_ADMIN);
         _;
     }
 
@@ -70,10 +67,7 @@ contract NFTList is Initializable {
      * @param isERC1155 What type of nft, ERC1155 or ERC721?
      **/
     function registerNFT(address nftAddress, bool isERC1155) external {
-        require(
-            !_nftToInfo[nftAddress].isRegistered,
-            Errors.NFT_ALREADY_REGISTERED
-        );
+        require(!_nftToInfo[nftAddress].isRegistered, Errors.NFT_ALREADY_REGISTERED);
 
         if (isERC1155) {
             require(IERC1155(nftAddress).balanceOf(address(this), 0) >= 0);
@@ -81,11 +75,7 @@ contract NFTList is Initializable {
             require(IERC721(nftAddress).balanceOf(address(this)) >= 0);
         }
 
-        _nftToInfo[nftAddress].register(
-            _nftsList.length,
-            nftAddress,
-            isERC1155
-        );
+        _nftToInfo[nftAddress].register(_nftsList.length, nftAddress, isERC1155);
 
         _nftsList.push(nftAddress);
 
@@ -99,10 +89,7 @@ contract NFTList is Initializable {
      **/
     function acceptNFT(address nftAddress) external onlyMarketAdmin {
         require(_nftToInfo[nftAddress].isRegistered, Errors.NFT_NOT_REGISTERED);
-        require(
-            !_nftToInfo[nftAddress].isAccepted,
-            Errors.NFT_ALREADY_ACCEPTED
-        );
+        require(!_nftToInfo[nftAddress].isAccepted, Errors.NFT_ALREADY_ACCEPTED);
 
         _nftToInfo[nftAddress].accept();
         _acceptedList.push(_nftToInfo[nftAddress].id);
@@ -145,15 +132,8 @@ contract NFTList is Initializable {
      * @param nftAddress The address of nft contract
      * @param isERC1155 What type of nft, ERC1155 or ERC721?
      **/
-    function addNFTDirectly(address nftAddress, bool isERC1155)
-        external
-        onlyCreativeStudio
-    {
-        _nftToInfo[nftAddress].register(
-            _nftsList.length,
-            nftAddress,
-            isERC1155
-        );
+    function addNFTDirectly(address nftAddress, bool isERC1155) external onlyCreativeStudio {
+        _nftToInfo[nftAddress].register(_nftsList.length, nftAddress, isERC1155);
         _nftsList.push(nftAddress);
         _nftToInfo[nftAddress].accept();
         _acceptedList.push(_nftToInfo[nftAddress].id);
@@ -165,11 +145,7 @@ contract NFTList is Initializable {
      * @param nftAddress The address of nft
      * @return The information of nft
      **/
-    function getNFTInfor(address nftAddress)
-        external
-        view
-        returns (DataTypes.NFTInfo memory)
-    {
+    function getNFTInfor(address nftAddress) external view returns (DataTypes.NFTInfo memory) {
         return _nftToInfo[nftAddress];
     }
 

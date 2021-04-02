@@ -19,18 +19,12 @@ contract MOCHI is ERC20PresetMinterPauser {
     uint256 public blacklistIneffectiveTime;
 
     modifier onlyAdmin() {
-        require(
-            hasRole(DEFAULT_ADMIN_ROLE, _msgSender()),
-            "MOCHI: ADMIN role required"
-        );
+        require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "MOCHI: ADMIN role required");
         _;
     }
 
     modifier onlyMinter() {
-        require(
-            hasRole(MINTER_ROLE, _msgSender()),
-            "MOCHI: MINTER role required"
-        );
+        require(hasRole(MINTER_ROLE, _msgSender()), "MOCHI: MINTER role required");
         _;
     }
 
@@ -39,16 +33,8 @@ contract MOCHI is ERC20PresetMinterPauser {
         _mint(_msgSender(), INITIAL_SUPPLY);
     }
 
-    function mint(address to, uint256 amount)
-        public
-        virtual
-        override
-        onlyMinter
-    {
-        require(
-            totalSupply().add(amount) <= MAX_SUPPLY,
-            "MOCHI: max supply exceeded"
-        );
+    function mint(address to, uint256 amount) public virtual override onlyMinter {
+        require(totalSupply().add(amount) <= MAX_SUPPLY, "MOCHI: max supply exceeded");
         _mint(to, amount);
     }
 
@@ -57,10 +43,7 @@ contract MOCHI is ERC20PresetMinterPauser {
     }
 
     function addToBlacklist(address user) public onlyAdmin {
-        require(
-            block.number < blacklistIneffectiveTime,
-            "MOCHI: Force lock time ended"
-        );
+        require(block.number < blacklistIneffectiveTime, "MOCHI: Force lock time ended");
         blacklist[user] = BlacklistInfo(true, block.number, balanceOf(user));
     }
 
@@ -73,9 +56,9 @@ contract MOCHI is ERC20PresetMinterPauser {
 
         uint256 unlockedBalance;
         if (block.number - info.lockedFrom <= BLACKLIST_LOCK_DURATION) {
-            unlockedBalance = (block.number - info.lockedFrom)
-                .mul(info.initLockedBalance)
-                .div(BLACKLIST_LOCK_DURATION);
+            unlockedBalance = (block.number - info.lockedFrom).mul(info.initLockedBalance).div(
+                BLACKLIST_LOCK_DURATION
+            );
         } else {
             unlockedBalance = info.initLockedBalance;
         }

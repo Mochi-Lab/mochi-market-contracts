@@ -12,23 +12,13 @@ contract MochiRewardToken is ERC20, Ownable {
     uint256 public constant MAX_SUPPLY = 1e26;
 
     modifier supplyIsAvailable(uint256 amount) {
-        require(
-            totalSupply().add(amount) <= MAX_SUPPLY,
-            Errors.SUPPLY_IS_NOT_AVAILABLE
-        );
+        require(totalSupply().add(amount) <= MAX_SUPPLY, Errors.SUPPLY_IS_NOT_AVAILABLE);
         _;
     }
 
-    constructor(string memory name, string memory symbol)
-        public
-        ERC20(name, symbol)
-    {}
+    constructor(string memory name, string memory symbol) public ERC20(name, symbol) {}
 
-    function mint(address account, uint256 amount)
-        external
-        onlyOwner
-        supplyIsAvailable(amount)
-    {
+    function mint(address account, uint256 amount) external onlyOwner supplyIsAvailable(amount) {
         _mint(account, amount);
     }
 

@@ -15,14 +15,21 @@ describe('Vault', async () => {
 
     addressesProvider = await deployAddressesProvider(deployer);
 
-    let result = await allSetup(deployer, addressesProvider, deployer, marketAdmin);
+    let result = await allSetup(
+      deployer,
+      addressesProvider,
+      deployer,
+      marketAdmin
+    );
     addressesProvider = result.addressesProvider;
     vaultProxy = result.vaultProxy;
     marketProxy = result.marketProxy;
   });
 
   it('All setup successfully', async () => {
-    expect(await vaultProxy.addressesProvider()).to.equal(addressesProvider.address);
+    expect(await vaultProxy.addressesProvider()).to.equal(
+      addressesProvider.address
+    );
     expect(await addressesProvider.getVault()).to.equal(vaultProxy.address);
     expect(await addressesProvider.getAdmin()).to.equal(marketAdmin.address);
   });
@@ -41,7 +48,9 @@ describe('Vault', async () => {
 
   it('Vithdraw failed due to insufficient balance', async () => {
     await expect(
-      vaultProxy.connect(marketAdmin).withdrawFund(ETH_Address, 1000, marketAdmin.address)
+      vaultProxy
+        .connect(marketAdmin)
+        .withdrawFund(ETH_Address, 1000, marketAdmin.address)
     ).to.be.revertedWith(ERRORS.INSUFFICIENT_BALANCE);
   });
 });

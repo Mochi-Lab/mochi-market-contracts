@@ -62,10 +62,7 @@ contract AddressesProvider is Ownable {
      * @param nftList The new NFTList implementation
      * @param params The calldata for initialize in the new implementation (if required)
      **/
-    function setNFTListImpl(address nftList, bytes memory params)
-        external
-        onlyOwner
-    {
+    function setNFTListImpl(address nftList, bytes memory params) external onlyOwner {
         _updateImpl(NFT_LIST, nftList, params);
         emit NFTListUpdated(nftList);
     }
@@ -84,10 +81,7 @@ contract AddressesProvider is Ownable {
      * @param market The new Market implementation
      * @param params The calldata for initialize in the new implementation (if required)
      **/
-    function setMarketImpl(address market, bytes memory params)
-        external
-        onlyOwner
-    {
+    function setMarketImpl(address market, bytes memory params) external onlyOwner {
         _updateImpl(MARKET, market, params);
         emit MarketUpdated(market);
     }
@@ -106,10 +100,7 @@ contract AddressesProvider is Ownable {
      * @param sellOrderList The new SellOrderList implementation
      * @param params The calldata for initialize in the new implementation (if required)
      **/
-    function setSellOrderListImpl(address sellOrderList, bytes memory params)
-        external
-        onlyOwner
-    {
+    function setSellOrderListImpl(address sellOrderList, bytes memory params) external onlyOwner {
         _updateImpl(SELL_ORDER_LIST, sellOrderList, params);
         emit SellOrderListUpdated(sellOrderList);
     }
@@ -128,10 +119,7 @@ contract AddressesProvider is Ownable {
      * @param vault The new Vault implementation
      * @param params The calldata for initialize in the new implementation (if required)
      **/
-    function setVaultImpl(address vault, bytes memory params)
-        external
-        onlyOwner
-    {
+    function setVaultImpl(address vault, bytes memory params) external onlyOwner {
         _updateImpl(VAULT, vault, params);
         emit VaultUpdated(vault);
     }
@@ -172,10 +160,10 @@ contract AddressesProvider is Ownable {
      * @param exchangeOrderList The new ExchangeOrderList implementation
      * @param params The calldata for initialize in the new implementation (if required)
      **/
-    function setExchangeOrderListImpl(
-        address exchangeOrderList,
-        bytes memory params
-    ) external onlyOwner {
+    function setExchangeOrderListImpl(address exchangeOrderList, bytes memory params)
+        external
+        onlyOwner
+    {
         _updateImpl(EXCHANGE_ORDER_LIST, exchangeOrderList, params);
         emit ExchangeOrderListUpdated(exchangeOrderList);
     }
@@ -245,21 +233,14 @@ contract AddressesProvider is Ownable {
 
         if (proxyAddress == address(0)) {
             TransparentUpgradeableProxy proxy =
-                new TransparentUpgradeableProxy(
-                    newAddress,
-                    address(this),
-                    params
-                );
+                new TransparentUpgradeableProxy(newAddress, address(this), params);
             _addresses[id] = address(proxy);
             emit ProxyCreated(id, address(proxy));
         } else {
             if (params.length == 0) {
                 TransparentUpgradeableProxy(proxyAddress).upgradeTo(newAddress);
             } else {
-                TransparentUpgradeableProxy(proxyAddress).upgradeToAndCall(
-                    newAddress,
-                    params
-                );
+                TransparentUpgradeableProxy(proxyAddress).upgradeToAndCall(newAddress, params);
             }
         }
     }

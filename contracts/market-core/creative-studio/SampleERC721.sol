@@ -19,10 +19,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 abstract contract Ownable {
     address private _owner;
 
-    event OwnershipTransferred(
-        address indexed previousOwner,
-        address indexed newOwner
-    );
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
@@ -64,10 +61,7 @@ abstract contract Ownable {
      * Can only be called by the current owner.
      */
     function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(
-            newOwner != address(0),
-            "Ownable: new owner is the zero address"
-        );
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
         emit OwnershipTransferred(_owner, newOwner);
         _owner = newOwner;
     }
@@ -87,11 +81,7 @@ contract SampleERC721 is ERC721, Ownable {
         _setBaseURI(baseUri);
     }
 
-    function mint(address to, string memory tokenUri)
-        external
-        onlyOwner
-        returns (uint256)
-    {
+    function mint(address to, string memory tokenUri) external onlyOwner returns (uint256) {
         _tokenIds.increment();
 
         uint256 newNftTokenId = _tokenIds.current();
@@ -107,10 +97,7 @@ contract SampleERC721 is ERC721, Ownable {
         _setBaseURI(baseUri);
     }
 
-    function setTokenURI(uint256 tokenId, string memory tokenUri)
-        external
-        onlyOwner
-    {
+    function setTokenURI(uint256 tokenId, string memory tokenUri) external onlyOwner {
         _setTokenURI(tokenId, tokenUri);
     }
 
