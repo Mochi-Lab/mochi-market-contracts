@@ -5,7 +5,7 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract SeedifyNFT is ERC721, Ownable {
+contract TheTotemOfCreation is ERC721, Ownable {
     constructor(
         string memory name,
         string memory symbol,
