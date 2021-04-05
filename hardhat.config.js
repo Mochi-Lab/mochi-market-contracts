@@ -19,15 +19,6 @@ module.exports = {
       },
     },
   },
-
-  // networks: {
-  //   bsctestnet: {
-  //     url: `https://data-seed-prebsc-2-s1.binance.org:8545`,
-  //     accounts: {
-  //       mnemonic: process.env.MNEMONIC
-  //     }
-  //   }
-  // },
   defaultNetwork: 'localhost',
   networks: {
     localhost: {
