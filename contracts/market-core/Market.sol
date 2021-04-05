@@ -262,7 +262,7 @@ contract Market is Initializable, ReentrancyGuard {
      * @param tokens The token that seller wants to be paid for
      * @param prices The price that seller wants
      * @param users Users address
-     * @param datas Calldata that seller wants to execute when he receives destination nft
+     * @param data Calldata that seller wants to execute when he receives destination nft
      **/
     function createExchangeOrder(
         address[] memory nftAddresses,
@@ -271,19 +271,19 @@ contract Market is Initializable, ReentrancyGuard {
         address[] memory tokens,
         uint256[] memory prices,
         address[] memory users,
-        bytes[] memory datas
+        bytes[] memory data
     ) external nonReentrant {
         require(
             nftAddresses.length == tokenIds.length &&
                 tokenIds.length == nftAmounts.length &&
                 nftAmounts.length == tokens.length &&
                 tokens.length == prices.length &&
-                prices.length == datas.length,
+                prices.length == data.length,
             Errors.PARAMETERS_NOT_MATCH
         );
         require(msg.sender == users[0], Errors.PARAMETERS_NOT_MATCH);
 
-        require(datas[0].length == 0, Errors.INVALID_CALLDATA);
+        require(data[0].length == 0, Errors.INVALID_CALLDATA);
 
         for (uint256 i = 0; i < nftAddresses.length; i++) {
             require(nftList.isAcceptedNFT(nftAddresses[i]), Errors.NFT_NOT_ACCEPTED);
@@ -335,7 +335,7 @@ contract Market is Initializable, ReentrancyGuard {
             tokens,
             prices,
             users,
-            datas
+            data
         );
     }
 
@@ -392,7 +392,7 @@ contract Market is Initializable, ReentrancyGuard {
                 exchangeOrder.users[0],
                 exchangeOrder.tokenIds[destinationId],
                 exchangeOrder.nftAmounts[destinationId],
-                exchangeOrder.datas[destinationId]
+                exchangeOrder.data[destinationId]
             );
         } else {
             require(

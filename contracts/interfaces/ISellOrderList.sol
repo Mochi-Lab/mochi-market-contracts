@@ -19,80 +19,99 @@ interface ISellOrderList {
         address token
     ) external;
 
-    function getSellOrderById(uint256 id) external view returns (DataTypes.SellOrder memory);
-
-    function getSellOrderByIdList(uint256[] memory idList)
-        external
-        view
-        returns (DataTypes.SellOrder[] memory);
-
-    function getSellOrderByRange(uint256 fromId, uint256 toId)
-        external
-        view
-        returns (DataTypes.SellOrder[] memory);
-
-    function getAllSellOrder() external view returns (DataTypes.SellOrder[] memory);
-
-    function getNumberOfSellOrder() external view returns (uint256);
-
-    function getAvailableSellOrder() external view returns (DataTypes.SellOrder[] memory);
-
-    function getAvailableSellOrderIdList() external view returns (uint256[] memory);
-
-    function getAllSellOrderByUser(address user)
-        external
-        view
-        returns (DataTypes.SellOrder[] memory);
-
-    function getAllSellOrderIdListByUser(address user) external view returns (uint256[] memory);
-
-    function getAvailableSellOrderByUser(address user)
-        external
-        view
-        returns (DataTypes.SellOrder[] memory);
-
-    function getAvailableSellOrderIdListByUser(address user)
-        external
-        view
-        returns (uint256[] memory);
-
-    function getAllSellOrderByNftAddress(address nftAddress)
-        external
-        view
-        returns (DataTypes.SellOrder[] memory);
-
-    function getAllSellOrderIdListByNftAddress(address nftAddress)
-        external
-        view
-        returns (uint256[] memory);
-
-    function getAvailableSellOrderByNftAddress(address nftAddress)
-        external
-        view
-        returns (DataTypes.SellOrder[] memory);
-
-    function getAvailableSellOrderIdListByNftAddress(address nftAddress)
-        external
-        view
-        returns (uint256[] memory);
-
-    function getBoughtByUser(address user) external view returns (DataTypes.SellOrder[] memory);
-
-    function deactiveSellOrder(uint256 id) external;
+    function deactiveSellOrder(uint256 sellId) external;
 
     function completeSellOrder(
-        uint256 id,
+        uint256 sellId,
         address buyer,
         uint256 amount
     ) external;
 
-    function completeSellOrderByBatch(
-        uint256[] memory sellId,
-        address[] memory buyer,
-        uint256[] memory amount
-    ) external;
-
     function updatePrice(uint256 sellId, uint256 newPrice) external;
+
+    function getSellOrderById(uint256 sellId) external view returns (DataTypes.SellOrder memory);
+
+    function getSellOrdersByIdList(uint256[] memory idList)
+        external
+        view
+        returns (DataTypes.SellOrder[] memory);
+
+    function getSellOrdersByRange(uint256 fromId, uint256 toId)
+        external
+        view
+        returns (DataTypes.SellOrder[] memory);
+
+    function getAllSellOrders() external view returns (DataTypes.SellOrder[] memory);
+
+    function getSellOrderCount() external view returns (uint256);
+
+    function getAvailableSellOrders()
+        external
+        view
+        returns (DataTypes.SellOrder[] memory erc721, DataTypes.SellOrder[] memory erc1155);
+
+    function getAvailableSellOrdersIdList()
+        external
+        view
+        returns (uint256[] memory erc721, uint256[] memory erc1155);
+
+    function getAllSellOrdersByUser(address user)
+        external
+        view
+        returns (DataTypes.SellOrder[] memory);
+
+    function getAllSellOrdersIdListByUser(address user) external view returns (uint256[] memory);
+
+    function getAvailableSellOrdersByUser(address user)
+        external
+        view
+        returns (DataTypes.SellOrder[] memory erc721, DataTypes.SellOrder[] memory erc1155);
+
+    function getAvailableSellOrdersIdListByUser(address user)
+        external
+        view
+        returns (uint256[] memory erc721, uint256[] memory erc1155);
+
+    function getAllSellOrdersByNftAddress(address nftAddress)
+        external
+        view
+        returns (DataTypes.SellOrder[] memory);
+
+    function getAllSellOrdersIdListByNftAddress(address nftAddress)
+        external
+        view
+        returns (uint256[] memory);
+
+    function getAvailableSellOrdersByNftAddress(address nftAddress)
+        external
+        view
+        returns (DataTypes.SellOrder[] memory);
+
+    function getAvailableSellOrdersIdListByNftAddress(address nftAddress)
+        external
+        view
+        returns (uint256[] memory);
+
+    function getSellOrdersBoughtByUser(address user)
+        external
+        view
+        returns (DataTypes.SellOrder[] memory);
+
+    function getSellOrdersBoughtIdListByUser(address user)
+        external
+        view
+        returns (uint256[] memory);
+
+    function getLatestSellId_ERC721(address nftAddress, uint256 tokenId)
+        external
+        view
+        returns (bool found, uint256 id);
+
+    function getLatestSellId_ERC1155(
+        address seller,
+        address nftAddress,
+        uint256 tokenId
+    ) external view returns (bool found, uint256 id);
 
     function checkDuplicate_ERC721(
         address nftAddress,

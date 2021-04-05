@@ -12,7 +12,7 @@ contract TestERC1155 is ERC1155, Ownable {
         uint256 tokenId_,
         uint256 amount_,
         bytes memory data_
-    ) public onlyOwner {
+    ) external onlyOwner {
         _mint(account_, tokenId_, amount_, data_);
     }
 }

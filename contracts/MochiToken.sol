@@ -42,12 +42,12 @@ contract MOCHI is ERC20PresetMinterPauser {
         return blacklist[user].locked;
     }
 
-    function addToBlacklist(address user) public onlyAdmin {
+    function addToBlacklist(address user) external onlyAdmin {
         require(block.number < blacklistIneffectiveTime, "MOCHI: Force lock time ended");
         blacklist[user] = BlacklistInfo(true, block.number, balanceOf(user));
     }
 
-    function removeFromBlacklist(address user) public onlyAdmin {
+    function removeFromBlacklist(address user) external onlyAdmin {
         blacklist[user].locked = false;
     }
 

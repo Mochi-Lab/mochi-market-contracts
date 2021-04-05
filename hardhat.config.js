@@ -24,9 +24,9 @@ module.exports = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 1000
-      }
-    }
+        runs: 1000,
+      },
+    },
   },
 
   // networks: {
@@ -37,10 +37,18 @@ module.exports = {
   //     }
   //   }
   // },
+  defaultNetwork: 'localhost',
+  networks: {
+    localhost: {
+      url: 'http://127.0.0.1:8545',
+      gasLimit: 6000000000,
+      defaultBalanceEther: 10,
+    },
+  },
 
   gas: 40000000,
   gasPrice: 10000000000,
   mocha: {
-    timeout: 100000
-  }
+    timeout: 100000,
+  },
 };

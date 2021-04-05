@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract TestERC721 is ERC721, Ownable {
     constructor(string memory name_, string memory symbol_) public ERC721(name_, symbol_) {}
 
-    function mint(address _to, uint256 _tokenId) public onlyOwner {
+    function mint(address _to, uint256 _tokenId) external onlyOwner {
         _safeMint(_to, _tokenId);
     }
 }
