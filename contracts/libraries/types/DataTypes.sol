@@ -71,17 +71,10 @@ library DataTypes {
         // exchange times
         uint256[] times;
         // call data;
-        bytes[] datas;
+        bytes[] data;
         // is active
         bool isActive;
         // sold amount
         uint256 soldAmount;
-    }
-
-    struct DynamicArray {
-        // index to value
-        mapping(uint256 => uint256) value;
-        // length of array
-        uint256 length;
     }
 }

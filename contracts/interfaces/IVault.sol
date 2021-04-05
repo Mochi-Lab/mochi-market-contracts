@@ -7,6 +7,8 @@ pragma solidity 0.6.12;
  * @author MochiLab
  **/
 interface IVault {
+    function setupRewardToken(address token) external;
+
     function deposit(
         address nftAddress,
         address seller,
@@ -15,5 +17,48 @@ interface IVault {
         uint256 amount
     ) external payable;
 
-    function setupRewardToken(address token) external;
+    function withdrawFund(
+        address token,
+        uint256 amount,
+        address payable receiver
+    ) external;
+
+    function claimRoyalty(
+        address nftAddress,
+        address token,
+        uint256 amount,
+        address payable receiver
+    ) external;
+
+    function withrawRewardToken(
+        address rewardToken,
+        uint256 amount,
+        address receiver
+    ) external;
+
+    function setupRewardParameters(
+        uint256 periodOfCycle,
+        uint256 numberOfCycle,
+        uint256 startTime,
+        uint256 firstRate
+    ) external;
+
+    function updateRoyaltyParameters(uint256 numerator, uint256 denominator) external;
+
+    function getCurrentRate() external view returns (uint256);
+
+    function getCurrentPeriod() external view returns (uint256);
+
+    function getRewardToken(address token) external view returns (address);
+
+    function getRewardTokenBalance(address user, address rewardToken)
+        external
+        view
+        returns (uint256);
+
+    function getMochiFund(address token) external view returns (uint256);
+
+    function getRoyaltyParameters() external view returns (uint256, uint256);
+
+    function checkRewardIsActive() external view returns (bool);
 }
