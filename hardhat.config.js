@@ -1,9 +1,6 @@
-/** @format */
-
-require('@nomiclabs/hardhat-waffle');
 require('dotenv').config();
-// This is a sample Hardhat task. To learn how to create your own go to
-// https://hardhat.org/guides/create-task.html
+require('@nomiclabs/hardhat-waffle');
+
 task('accounts', 'Prints the list of accounts', async () => {
   const accounts = await ethers.getSigners();
 
@@ -12,12 +9,6 @@ task('accounts', 'Prints the list of accounts', async () => {
   }
 });
 
-// You need to export an object to set up your config
-// Go to https://hardhat.org/config/ to learn more
-
-/**
- * @type import('hardhat/config').HardhatUserConfig
- */
 module.exports = {
   solidity: {
     version: '0.6.12',
@@ -28,15 +19,6 @@ module.exports = {
       },
     },
   },
-
-  // networks: {
-  //   bsctestnet: {
-  //     url: `https://data-seed-prebsc-2-s1.binance.org:8545`,
-  //     accounts: {
-  //       mnemonic: process.env.MNEMONIC
-  //     }
-  //   }
-  // },
   defaultNetwork: 'localhost',
   networks: {
     localhost: {

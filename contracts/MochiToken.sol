@@ -4,10 +4,10 @@ pragma solidity 0.6.12;
 import "@openzeppelin/contracts/presets/ERC20PresetMinterPauser.sol";
 
 contract MOCHI is ERC20PresetMinterPauser {
-    uint256 public constant INITIAL_SUPPLY = 500000 * DECIMAL_MULTIPLIER;
+    uint256 public constant INITIAL_SUPPLY = 59000000 * DECIMAL_MULTIPLIER;
     uint256 public constant MAX_SUPPLY = 100000000 * DECIMAL_MULTIPLIER;
     uint256 public constant DECIMAL_MULTIPLIER = 10**18;
-    uint256 public constant BLACKLIST_LOCK_DURATION = 432200; // 432200 blocks ~ 50 days
+    uint256 public constant BLACKLIST_LOCK_DURATION = 50 days;
 
     struct BlacklistInfo {
         bool locked;
@@ -16,7 +16,7 @@ contract MOCHI is ERC20PresetMinterPauser {
     }
 
     mapping(address => BlacklistInfo) public blacklist;
-    uint256 public blacklistIneffectiveTime;
+    uint256 public blacklistEffectiveEndtime;
 
     modifier onlyAdmin() {
         require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "MOCHI: ADMIN role required");
@@ -29,22 +29,22 @@ contract MOCHI is ERC20PresetMinterPauser {
     }
 
     constructor() public ERC20PresetMinterPauser("MOCHI", "MOCHI") {
-        blacklistIneffectiveTime = block.number + 30 * 8640; // 30 days from deploy
+        blacklistEffectiveEndtime = block.timestamp + 30 days;
         _mint(_msgSender(), INITIAL_SUPPLY);
     }
 
     function mint(address to, uint256 amount) public virtual override onlyMinter {
-        require(totalSupply().add(amount) <= MAX_SUPPLY, "MOCHI: max supply exceeded");
+        require(totalSupply().add(amount) <= MAX_SUPPLY, "MOCHI: Max supply exceeded");
         _mint(to, amount);
     }
 
-    function isBlocked(address user) public view returns (bool) {
+    function isBlocked(address user) external view returns (bool) {
         return blacklist[user].locked;
     }
 
     function addToBlacklist(address user) external onlyAdmin {
-        require(block.number < blacklistIneffectiveTime, "MOCHI: Force lock time ended");
-        blacklist[user] = BlacklistInfo(true, block.number, balanceOf(user));
+        require(block.timestamp < blacklistEffectiveEndtime, "MOCHI: Force lock time ended");
+        blacklist[user] = BlacklistInfo(true, block.timestamp, balanceOf(user));
     }
 
     function removeFromBlacklist(address user) external onlyAdmin {
@@ -55,8 +55,8 @@ contract MOCHI is ERC20PresetMinterPauser {
         BlacklistInfo memory info = blacklist[user];
 
         uint256 unlockedBalance;
-        if (block.number - info.lockedFrom <= BLACKLIST_LOCK_DURATION) {
-            unlockedBalance = (block.number - info.lockedFrom).mul(info.initLockedBalance).div(
+        if (block.timestamp - info.lockedFrom < BLACKLIST_LOCK_DURATION) {
+            unlockedBalance = (block.timestamp - info.lockedFrom).mul(info.initLockedBalance).div(
                 BLACKLIST_LOCK_DURATION
             );
         } else {
@@ -70,13 +70,13 @@ contract MOCHI is ERC20PresetMinterPauser {
         address to,
         uint256 amount
     ) internal override {
-        if (isBlocked(from) == true) {
+        if (blacklist[from].locked == true) {
             BlacklistInfo memory info = blacklist[from];
             uint256 unlockBalance = checkUnlockedBalance(from);
             uint256 lockedBalance = info.initLockedBalance.sub(unlockBalance);
             require(
                 balanceOf(from).sub(lockedBalance) >= amount,
-                "MOCHI BLACKLIST: cannot transfer locked balance"
+                "MOCHI BLACKLIST: Cannot transfer locked balance"
             );
         }
         super._beforeTokenTransfer(from, to, amount);
