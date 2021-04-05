@@ -1,74 +1,181 @@
-const hre = require('hardhat');
+const { ethers } = require('hardhat');
+const { sleep } = require('sleep');
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
+  let royaltyNumerator = '20';
+  let royaltyDenominator = '100';
+  let feeNumerator = '25';
+  let feeDenominator = '1000';
+  let nativeCoin = 'BNB';
+
+  let [deployer, marketAdmin] = await ethers.getSigners();
 
   console.log('Deploying contracts with the account:', deployer.address);
-  const AddressesProvider = await hre.ethers.getContractFactory('AddressesProvider');
-  const addressesProvider = await AddressesProvider.deploy();
-  await addressesProvider.setAdmin(deployer.address);
-  console.log('Address AddressesProvider', addressesProvider.address);
 
-  // deploy an implementation of NFTList contract
-  let NFTList = await hre.ethers.getContractFactory('NFTList');
-  let nftListImpl = await NFTList.deploy();
-  console.log('Address NftListImpl', nftListImpl.address);
-  // get initData of NFTList contract
-  let initData = nftListImpl.interface.encodeFunctionData('initialize', [
-    addressesProvider.address
-  ]);
-
-  // call function setNFTListImpl() of AddressesProvider contract
-  await addressesProvider.setNFTListImpl(nftListImpl.address, initData, { gasLimit: 30000000 });
-
-  //******************** */
-
-  // deploy an implementation of Vault contract
-  let Vault = await hre.ethers.getContractFactory('Vault');
-  let vaultImpl = await Vault.deploy();
-  console.log('Address Vault', vaultImpl.address);
-  // get initData of Vault contract
-  initData = vaultImpl.interface.encodeFunctionData('initialize', [addressesProvider.address]);
-  // call function setVaultImpl() of AddressesProvider contract
-  await addressesProvider.setVaultImpl(vaultImpl.address, initData, { gasLimit: 30000000 });
-
-  //******************** */
-
-  // deploy an implementation of SellOrderList contract
-  let SellOrderList = await hre.ethers.getContractFactory('SellOrderList');
-  let sellOrderListImpl = await SellOrderList.deploy();
-  console.log('Address SellOrderList', sellOrderListImpl.address);
-  // get initData of SellOrderList contract
-  initData = sellOrderListImpl.interface.encodeFunctionData('initialize', [
-    addressesProvider.address
-  ]);
-  // call function setSellOrderListImpl() of AddressesProvider contract
-  await addressesProvider.setSellOrderListImpl(sellOrderListImpl.address, initData, {
-    gasLimit: 30000000
+  // Deploy AddressesProvider contract
+  console.log('\nDeploying AddressesProvider...');
+  let AddressesProvider = await ethers.getContractFactory('AddressesProvider');
+  let addressesProvider = await AddressesProvider.connect(deployer).deploy({
+    gasLimit: 6721975,
   });
 
-  //******************** */
+  // Deploy NFTList contract
+  console.log('\nDeploying NFTList...');
+  let NFTList = await ethers.getContractFactory('NFTList');
+  let nftListImpl = await NFTList.connect(deployer).deploy({
+    gasLimit: 6721975,
+  });
+  let initData = nftListImpl.interface.encodeFunctionData('initialize', [
+    addressesProvider.address,
+  ]);
+  console.log('\nSet NFTList Implementation...');
+  await addressesProvider
+    .connect(deployer)
+    .setNFTListImpl(nftListImpl.address, initData, {
+      gasLimit: 6721975,
+    });
 
-  let Market = await hre.ethers.getContractFactory('Market');
-  let marketImpl = await Market.deploy();
-  console.log('Address Market', marketImpl.address);
+  // Deploy Vault contract
+  console.log('\nDeploying Vault...');
+  let Vault = await ethers.getContractFactory('Vault');
+  let vaultImpl = await Vault.connect(deployer).deploy({
+    gasLimit: 6721975,
+  });
+  initData = vaultImpl.interface.encodeFunctionData('initialize', [
+    addressesProvider.address,
+    royaltyNumerator,
+    royaltyDenominator,
+    nativeCoin,
+  ]);
+  console.log('\nSet Vault Implementation...');
+  await addressesProvider
+    .connect(deployer)
+    .setVaultImpl(vaultImpl.address, initData, {
+      gasLimit: 6721975,
+    });
 
-  // get initData of Market contract
+  // Deploy SellOrderList contract
+  console.log('\nDeploying SellOrderListContract...');
+  let SellOrderList = await ethers.getContractFactory('SellOrderList');
+  let sellOrderListImpl = await SellOrderList.connect(deployer).deploy({
+    gasLimit: 6721975,
+  });
+  initData = sellOrderListImpl.interface.encodeFunctionData('initialize', [
+    addressesProvider.address,
+  ]);
+  console.log('\nSet SellOrderListContract Implementation...');
+  await addressesProvider
+    .connect(deployer)
+    .setSellOrderListImpl(sellOrderListImpl.address, initData, {
+      gasLimit: 6721975,
+    });
+
+  // Deploy ExchangeOrderList contract
+  console.log('\nDeploying ExchangeOrderList...');
+  let ExchangeOrderList = await ethers.getContractFactory('ExchangeOrderList');
+  let exchangeOrderListImpl = await ExchangeOrderList.connect(deployer).deploy({
+    gasLimit: 6721975,
+  });
+  initData = exchangeOrderListImpl.interface.encodeFunctionData('initialize', [
+    addressesProvider.address,
+  ]);
+  console.log('\nSet ExchangeOrderList Implementation...');
+  await addressesProvider
+    .connect(deployer)
+    .setExchangeOrderListImpl(exchangeOrderListImpl.address, initData, {
+      gasLimit: 6721975,
+    });
+
+  // Deploy CreativeStudio contract
+  console.log('\nDeploying CreativeStudio...');
+  let ERC721Factory = await ethers.getContractFactory('ERC721Factory');
+  let erc721Factory = await ERC721Factory.connect(deployer).deploy({
+    gasLimit: 6721975,
+  });
+  let ERC1155Factory = await ethers.getContractFactory('ERC1155Factory');
+  let erc1155Factory = await ERC1155Factory.connect(deployer).deploy({
+    gasLimit: 6721975,
+  });
+
+  let CreativeStudio = await ethers.getContractFactory('CreativeStudio');
+  let creativeStudioImpl = await CreativeStudio.connect(deployer).deploy({
+    gasLimit: 6721975,
+  });
+  initData = creativeStudioImpl.interface.encodeFunctionData('initialize', [
+    addressesProvider.address,
+    erc721Factory.address,
+    erc1155Factory.address,
+  ]);
+  console.log('\nSet CreativeStudio Implementation...');
+  await addressesProvider
+    .connect(deployer)
+    .setCreativeStudioImpl(creativeStudioImpl.address, initData, {
+      gasLimit: 6721975,
+    });
+
+  // Deploy Market contract
+  console.log('\nDeploying Market...');
+  let Market = await ethers.getContractFactory('Market');
+  let marketImpl = await Market.connect(deployer).deploy({
+    gasLimit: 6721975,
+  });
   initData = marketImpl.interface.encodeFunctionData('initialize', [
     addressesProvider.address,
-    2,
-    1000
+    feeNumerator,
+    feeDenominator,
   ]);
+  console.log('\nSet Market Implementation...');
+  await addressesProvider
+    .connect(deployer)
+    .setMarketImpl(marketImpl.address, initData, {
+      gasLimit: 6721975,
+    });
 
-  // call function setMarketImpl() of AddressesProvider contract
-  await addressesProvider.setMarketImpl(marketImpl.address, initData, {
-    gasLimit: 30000000
+  // SetAdmin
+  console.log('\nSet Market Admin...');
+  await addressesProvider.connect(deployer).setAdmin(marketAdmin.address, {
+    gasLimit: 6721975,
   });
+
+  console.log('\nDeploy Mochi NFT...');
+  let Mochi = await ethers.getContractFactory('Mochi');
+  let mochi = await Mochi.connect(deployer).deploy({
+    gasLimit: 6721975,
+  });
+
+  sleep(10);
+
+  let nftListAddress = await addressesProvider.getNFTList();
+  let vaultAddress = await addressesProvider.getVault();
+  let sellOrderListAddress = await addressesProvider.getSellOrderList();
+  let exchangeOrderListAddress = await addressesProvider.getExchangeOrderList();
+  let creativeStudioAddress = await addressesProvider.getCreativeStudio();
+  let marketAddress = await addressesProvider.getMarket();
+
+  let nftList = await ethers.getContractAt('NFTList', nftListAddress);
+  console.log('\nRegister Mochi NFT...');
+  await nftList.connect(marketAdmin).registerNFT(mochi.address, false, {
+    gasLimit: 6721975,
+  });
+  console.log('\nAccept Mochi NFT...');
+  await nftList.connect(marketAdmin).acceptNFT(mochi.address, {
+    gasLimit: 6721975,
+  });
+  console.log('\n\n\nResult\n\n');
+  console.log('AddressesProvider: ', addressesProvider.address);
+  console.log('NFTList: ', nftListAddress);
+  console.log('Vault: ', vaultAddress);
+  console.log('SellOrderList: ', sellOrderListAddress);
+  console.log('ExchangeOrderList: ', exchangeOrderListAddress);
+  console.log('CreativeStudio: ', creativeStudioAddress);
+  console.log('Market: ', marketAddress);
+  console.log('Mochi NFT: ', mochi.address);
+  console.log('Admin: ', marketAdmin.address);
 }
 
 main()
   .then(() => process.exit(0))
-  .catch(error => {
+  .catch((error) => {
     console.error(error);
     process.exit(1);
   });
