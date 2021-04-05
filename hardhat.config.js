@@ -19,22 +19,26 @@ module.exports = {
       },
     },
   },
-  defaultNetwork: 'hardhat',
+
+  // networks: {
+  //   bsctestnet: {
+  //     url: `https://data-seed-prebsc-2-s1.binance.org:8545`,
+  //     accounts: {
+  //       mnemonic: process.env.MNEMONIC
+  //     }
+  //   }
+  // },
+  defaultNetwork: 'localhost',
   networks: {
-    hardhat: {},
     localhost: {
-      url: 'http://localhost:8545',
-      accounts: {
-        mnemonic: process.env.MNEMONIC_GANACHE,
-      },
-    },
-    bsctestnet: {
-      url: 'https://data-seed-prebsc-2-s1.binance.org:8545',
-      accounts: [process.env.PRIVATE_KEY_BSC_TESTNET],
+      url: 'http://127.0.0.1:8545',
+      gasLimit: 6000000000,
+      defaultBalanceEther: 10,
     },
   },
-  // gas: 40000000,
-  // gasPrice: 10000000000,
+
+  gas: 40000000,
+  gasPrice: 10000000000,
   mocha: {
     timeout: 100000,
   },

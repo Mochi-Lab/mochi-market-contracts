@@ -17,6 +17,8 @@ interface IAddressesProvider {
 
     function getAddress(bytes32 id) external view returns (address);
 
+    function setAddress(bytes32 id, address newAddress) external;
+
     function getNFTList() external view returns (address);
 
     function setNFTListImpl(address ercList, bytes memory params) external;

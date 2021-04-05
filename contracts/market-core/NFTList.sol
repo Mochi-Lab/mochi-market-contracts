@@ -161,7 +161,7 @@ contract NFTList is Initializable {
      * @dev Get address of all accepted nfts
      * @return The address of all accepted nfts
      **/
-    function getAcceptedNFTs() public view returns (address[] memory) {
+    function getAcceptedNFTs() external view returns (address[] memory) {
         address[] memory result = new address[](_acceptedList.length);
         for (uint256 i = 0; i < _acceptedList.length; i++) {
             result[i] = _nftsList[_acceptedList[i]];
@@ -174,7 +174,7 @@ contract NFTList is Initializable {
      * @param nftAddress The address of nft
      * @return Nft has been accepted or not?
      */
-    function isAcceptedNFT(address nftAddress) public view returns (bool) {
+    function isAcceptedNFT(address nftAddress) external view returns (bool) {
         return _nftToInfo[nftAddress].isAccepted;
     }
 }

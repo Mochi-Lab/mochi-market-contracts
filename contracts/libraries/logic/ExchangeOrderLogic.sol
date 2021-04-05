@@ -18,7 +18,7 @@ library ExchangeOrderLogic {
      * @param prices Number of tokens that the seller wants to receive
      * @param users  Users address who participating in the exchange
      * @param times  The times of creating exchange order and exchange
-     * @param datas Calldata that the seller wants to execute when receiving destination nft
+     * @param data Calldata that the seller wants to execute when receiving destination nft
      **/
     function newExchangeOrder(
         uint256 exchangeId,
@@ -29,7 +29,7 @@ library ExchangeOrderLogic {
         uint256[] memory prices,
         address[] memory users,
         uint256[] memory times,
-        bytes[] memory datas
+        bytes[] memory data
     ) internal pure returns (DataTypes.ExchangeOrder memory) {
         return
             DataTypes.ExchangeOrder({
@@ -41,7 +41,7 @@ library ExchangeOrderLogic {
                 prices: prices,
                 users: users,
                 times: times,
-                datas: datas,
+                data: data,
                 isActive: true,
                 soldAmount: 0
             });
