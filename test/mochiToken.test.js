@@ -19,14 +19,14 @@ describe('Mochi Token', async () => {
       ecosystemFunds,
     ] = await ethers.getSigners();
 
-    const MochiToken = await ethers.getContractFactory('MOCHI');
+    const MochiToken = await ethers.getContractFactory('contracts/MochiToken.sol:MOCHI');
     mochi = await MochiToken.connect(admin).deploy();
     await mochi.deployed();
   });
 
   it('Init balance of admin', async () => {
     const adminBalance = await mochi.balanceOf(admin.address);
-    expect(adminBalance).to.equal('65000000000000000000000000');
+    expect(adminBalance).to.equal('8000000000000000000000000');
   });
 
   describe('Blacklist', () => {

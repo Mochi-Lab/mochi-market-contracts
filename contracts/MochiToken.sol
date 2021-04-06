@@ -6,12 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/presets/ERC20PresetMinterPauser.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+/// @author MochiLab
 contract MOCHI is ERC20PresetMinterPauser, ReentrancyGuard {
-    uint256 public constant INITIAL_SUPPLY = 65000000 * DECIMAL_MULTIPLIER;
-    uint256 public constant MAX_SUPPLY = 100000000 * DECIMAL_MULTIPLIER;
-    uint256 public constant DECIMAL_MULTIPLIER = 10**18;
-    uint256 public constant BLACKLIST_LOCK_DURATION = 50 days;
-
     struct BlacklistInfo {
         bool locked;
         uint256 lockedFrom;
@@ -25,10 +21,20 @@ contract MOCHI is ERC20PresetMinterPauser, ReentrancyGuard {
         uint256 releaseFrom;
     }
 
-    mapping(address => BlacklistInfo) private blacklist;
-    mapping(address => VestingInfo) private vestingList;
+    /** Initial supply includes
+     * - private sale 5M
+     * - public sale 1.5M
+     * - DEX liquidity 1.5M
+     */
+    uint256 public constant INITIAL_SUPPLY = 8000000 * DECIMAL_MULTIPLIER;
+    uint256 public constant MAX_SUPPLY = 100000000 * DECIMAL_MULTIPLIER;
+    uint256 public constant DECIMAL_MULTIPLIER = 10**18;
+    uint256 public constant BLACKLIST_LOCK_DURATION = 50 days;
 
     uint256 public blacklistEffectiveEndtime;
+
+    mapping(address => BlacklistInfo) private _blacklist;
+    mapping(address => VestingInfo) private _vestingList;
 
     modifier onlyAdmin() {
         require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "MOCHI: ADMIN role required");
@@ -51,16 +57,16 @@ contract MOCHI is ERC20PresetMinterPauser, ReentrancyGuard {
     }
 
     function isBlocked(address user) external view returns (bool) {
-        return blacklist[user].locked;
+        return _blacklist[user].locked;
     }
 
     function addToBlacklist(address user) external onlyAdmin {
         require(block.timestamp < blacklistEffectiveEndtime, "MOCHI: Force lock time ended");
-        blacklist[user] = BlacklistInfo(true, block.timestamp, balanceOf(user));
+        _blacklist[user] = BlacklistInfo(true, block.timestamp, balanceOf(user));
     }
 
     function removeFromBlacklist(address user) external onlyAdmin {
-        blacklist[user].locked = false;
+        _blacklist[user].locked = false;
     }
 
     function addVestingToken(
@@ -73,62 +79,38 @@ contract MOCHI is ERC20PresetMinterPauser, ReentrancyGuard {
         if (releaseFrom == 0) releaseFrom = block.timestamp;
         require(releaseFrom >= block.timestamp, "MOCHI: Release time cannot be past time");
         require(
-            vestingList[recipient].initAmount == 0 &&
-                vestingList[recipient].vestingDays == 0 &&
-                vestingList[recipient].releaseFrom == 0,
+            _vestingList[recipient].initAmount == 0 &&
+                _vestingList[recipient].vestingDays == 0 &&
+                _vestingList[recipient].releaseFrom == 0,
             "MOCHI: Invalid vesting"
         );
-        vestingList[recipient] = VestingInfo(amount, 0, vestingDays, releaseFrom);
+        _vestingList[recipient] = VestingInfo(amount, 0, vestingDays, releaseFrom);
     }
 
     function claimVestingToken() external nonReentrant returns (uint256) {
         uint256 claimableAmount = getVestingClaimableAmount(msg.sender);
         require(claimableAmount > 0, "MOCHI: Nothing to claim");
         require(totalSupply().add(claimableAmount) <= MAX_SUPPLY, "MOCHI: Max supply exceeded");
-        vestingList[msg.sender].claimedAmount = vestingList[msg.sender].claimedAmount.add(
+        _vestingList[msg.sender].claimedAmount = _vestingList[msg.sender].claimedAmount.add(
             claimableAmount
         );
         _mint(msg.sender, claimableAmount);
     }
 
     function getBlacklistByUser(address user) external view returns (BlacklistInfo memory) {
-        return blacklist[user];
+        return _blacklist[user];
     }
 
     function getVestingInfoByUser(address user) external view returns (VestingInfo memory) {
-        return vestingList[user];
-    }
-
-    function withdrawERC20(address token, uint256 amount) public onlyAdmin {
-        require(amount > 0, "MOCHI: Amount must be greater than 0");
-        require(
-            IERC20(token).balanceOf(address(this)) >= amount,
-            "MOCHI: ERC20 not enough balance"
-        );
-        IERC20(token).transfer(msg.sender, amount);
+        return _vestingList[user];
     }
 
     function remainLockedBalance(address user) public view returns (uint256) {
-        return blacklist[user].initLockedBalance.sub(_getUnlockedBalance(user));
-    }
-
-    function _getUnlockedBalance(address user) internal view returns (uint256 unlockedBalance) {
-        BlacklistInfo memory info = blacklist[user];
-        unlockedBalance = info.initLockedBalance;
-        if (
-            info.locked == true &&
-            block.timestamp >= info.lockedFrom &&
-            block.timestamp.sub(info.lockedFrom) < BLACKLIST_LOCK_DURATION
-        ) {
-            unlockedBalance = (block.timestamp.sub(info.lockedFrom))
-                .mul(info.initLockedBalance)
-                .div(BLACKLIST_LOCK_DURATION);
-        }
-        return unlockedBalance;
+        return _blacklist[user].initLockedBalance.sub(_getUnlockedBalance(user));
     }
 
     function getVestingClaimableAmount(address user) public view returns (uint256 claimableAmount) {
-        VestingInfo memory info = vestingList[user];
+        VestingInfo memory info = _vestingList[user];
         if (block.timestamp < info.releaseFrom) return 0;
         uint256 releasedAmount;
         if (block.timestamp.sub(info.releaseFrom).add(1 days) >= info.vestingDays.mul(1 days)) {
@@ -144,19 +126,43 @@ contract MOCHI is ERC20PresetMinterPauser, ReentrancyGuard {
         }
     }
 
+    function _getUnlockedBalance(address user) internal view returns (uint256 unlockedBalance) {
+        BlacklistInfo memory info = _blacklist[user];
+        unlockedBalance = info.initLockedBalance;
+        if (
+            info.locked == true &&
+            block.timestamp >= info.lockedFrom &&
+            block.timestamp.sub(info.lockedFrom) < BLACKLIST_LOCK_DURATION
+        ) {
+            unlockedBalance = (block.timestamp.sub(info.lockedFrom))
+                .mul(info.initLockedBalance)
+                .div(BLACKLIST_LOCK_DURATION);
+        }
+        return unlockedBalance;
+    }
+
     function _beforeTokenTransfer(
         address from,
         address to,
         uint256 amount
     ) internal override {
         super._beforeTokenTransfer(from, to, amount);
-        if (blacklist[from].locked == true) {
+        if (_blacklist[from].locked == true) {
             uint256 lockedBalance = remainLockedBalance(from);
             require(
                 balanceOf(from).sub(amount) >= lockedBalance,
                 "MOCHI BLACKLIST: Cannot transfer locked balance"
             );
         }
+    }
+
+    function withdrawERC20(address token, uint256 amount) public onlyAdmin {
+        require(amount > 0, "MOCHI: Amount must be greater than 0");
+        require(
+            IERC20(token).balanceOf(address(this)) >= amount,
+            "MOCHI: ERC20 not enough balance"
+        );
+        IERC20(token).transfer(msg.sender, amount);
     }
 
     receive() external payable {
