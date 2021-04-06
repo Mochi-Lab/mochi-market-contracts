@@ -30,7 +30,7 @@ describe('Mochi Token', async () => {
   });
 
   describe('Blacklist', () => {
-    it('Admin can add user to blacklist witexpectReverthin blacklist effective time', async () => {
+    it('Admin can add user to blacklist witthin blacklist effective time', async () => {
       await mochi.connect(admin).addToBlacklist(alice.address);
       const isBlocked = await mochi.isBlocked(alice.address);
       expect(isBlocked).to.equal(true);

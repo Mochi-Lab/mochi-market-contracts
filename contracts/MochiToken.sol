@@ -40,7 +40,7 @@ contract MOCHI is ERC20PresetMinterPauser, ReentrancyGuard {
         _;
     }
 
-    constructor() public ERC20PresetMinterPauser("MOCHI", "MOCHI") {
+    constructor() public ERC20PresetMinterPauser("Mochi Market", "MOCHI") {
         blacklistEffectiveEndtime = block.timestamp + 30 days;
         _mint(_msgSender(), INITIAL_SUPPLY);
     }
@@ -100,7 +100,7 @@ contract MOCHI is ERC20PresetMinterPauser, ReentrancyGuard {
     }
 
     function withdrawERC20(address token, uint256 amount) public onlyAdmin {
-        require(amount > 0, "MOCHI: amount must be greater than 0");
+        require(amount > 0, "MOCHI: Amount must be greater than 0");
         require(
             IERC20(token).balanceOf(address(this)) >= amount,
             "MOCHI: ERC20 not enough balance"
@@ -127,11 +127,7 @@ contract MOCHI is ERC20PresetMinterPauser, ReentrancyGuard {
         return unlockedBalance;
     }
 
-    function getVestingClaimableAmount(address user)
-        public
-        view
-        returns (uint256 claimableAmount)
-    {
+    function getVestingClaimableAmount(address user) public view returns (uint256 claimableAmount) {
         VestingInfo memory info = vestingList[user];
         if (block.timestamp < info.releaseFrom) return 0;
         uint256 releasedAmount;
@@ -153,6 +149,7 @@ contract MOCHI is ERC20PresetMinterPauser, ReentrancyGuard {
         address to,
         uint256 amount
     ) internal override {
+        super._beforeTokenTransfer(from, to, amount);
         if (blacklist[from].locked == true) {
             uint256 lockedBalance = remainLockedBalance(from);
             require(
@@ -160,7 +157,6 @@ contract MOCHI is ERC20PresetMinterPauser, ReentrancyGuard {
                 "MOCHI BLACKLIST: Cannot transfer locked balance"
             );
         }
-        super._beforeTokenTransfer(from, to, amount);
     }
 
     receive() external payable {
