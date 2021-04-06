@@ -3,10 +3,10 @@
     {
       "files": "*.sol",
       "options": {
-        "printWidth": 99,
         "singleQuote": false
       }
     }
   ],
+  "printWidth": 100,
   "singleQuote": true
 }
