@@ -84,6 +84,7 @@ contract MOCHI is ERC20PresetMinterPauser, ReentrancyGuard {
     function claimVestingToken() external nonReentrant returns (uint256) {
         uint256 claimableAmount = getVestingClaimableAmount(msg.sender);
         require(claimableAmount > 0, "MOCHI: Nothing to claim");
+        require(totalSupply().add(claimableAmount) <= MAX_SUPPLY, "MOCHI: Max supply exceeded");
         vestingList[msg.sender].claimedAmount = vestingList[msg.sender].claimedAmount.add(
             claimableAmount
         );
