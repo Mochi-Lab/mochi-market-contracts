@@ -71,7 +71,7 @@ contract MOCHI is ERC20PresetMinterPauser, ReentrancyGuard {
     ) external onlyAdmin {
         require(recipient != address(0), "MOCHI: Zero address");
         if (releaseFrom == 0) releaseFrom = block.timestamp;
-        require(releaseFrom >= block.timestamp, "MOCHI: Unlock time cannot be past time");
+        require(releaseFrom >= block.timestamp, "MOCHI: Release time cannot be past time");
         require(
             vestingList[recipient].initAmount == 0 &&
                 vestingList[recipient].vestingDays == 0 &&
@@ -133,12 +133,16 @@ contract MOCHI is ERC20PresetMinterPauser, ReentrancyGuard {
     {
         VestingInfo memory info = vestingList[user];
         if (block.timestamp < info.releaseFrom) return 0;
-        uint256 releasedAmount =
-            (block.timestamp.sub(info.releaseFrom).add(1 days)).mul(info.initAmount).div(
-                info.vestingDays.mul(1 days)
-            );
+        uint256 releasedAmount;
+        if (block.timestamp.sub(info.releaseFrom).add(1 days) >= info.vestingDays.mul(1 days)) {
+            releasedAmount = info.initAmount;
+        } else {
+            releasedAmount = (block.timestamp.sub(info.releaseFrom).add(1 days))
+                .mul(info.initAmount)
+                .div(info.vestingDays.mul(1 days));
+        }
         claimableAmount = 0;
-        if (releasedAmount <= info.initAmount && releasedAmount > info.claimedAmount) {
+        if (releasedAmount > info.claimedAmount) {
             claimableAmount = releasedAmount.sub(info.claimedAmount);
         }
     }

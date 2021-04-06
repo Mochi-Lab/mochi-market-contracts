@@ -189,7 +189,7 @@ describe('Mochi Token', async () => {
         'MOCHI: Nothing to claim'
       );
 
-      await time.increase(time.duration.days(3570));
+      await time.increase(time.duration.days(3600));
       claimableAmount = await mochi.getVestingClaimableAmount(ecosystemFunds.address);
       expect(claimableAmount).to.gte(23000000 - 191667);
     });
