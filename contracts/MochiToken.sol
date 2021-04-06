@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/presets/ERC20PresetMinterPauser.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 contract MOCHI is ERC20PresetMinterPauser, ReentrancyGuard {
-    uint256 public constant INITIAL_SUPPLY = 59000000 * DECIMAL_MULTIPLIER;
+    uint256 public constant INITIAL_SUPPLY = 65000000 * DECIMAL_MULTIPLIER;
     uint256 public constant MAX_SUPPLY = 100000000 * DECIMAL_MULTIPLIER;
     uint256 public constant DECIMAL_MULTIPLIER = 10**18;
     uint256 public constant BLACKLIST_LOCK_DURATION = 50 days;

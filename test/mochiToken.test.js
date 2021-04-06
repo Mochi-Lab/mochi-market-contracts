@@ -26,7 +26,7 @@ describe('Mochi Token', async () => {
 
   it('Init balance of admin', async () => {
     const adminBalance = await mochi.balanceOf(admin.address);
-    expect(adminBalance).to.equal('59000000000000000000000000');
+    expect(adminBalance).to.equal('65000000000000000000000000');
   });
 
   describe('Blacklist', () => {
