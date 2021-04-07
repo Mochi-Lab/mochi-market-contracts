@@ -12,11 +12,16 @@
     "ethers": "^5.0.26",
     "ganache-time-traveler": "^1.0.15",
     "hardhat": "^2.0.8",
-    "prettier-plugin-solidity": "^1.0.0-beta.6"
+    "prettier-plugin-solidity": "^1.0.0-beta.6",
+    "sleep": "^6.3.0"
   },
   "scripts": {
     "compile": "npx hardhat compile",
-    "test": "npx hardhat test"
+    "test": "npx hardhat test",
+    "deploy-localhost": "npx hardhat run scripts/deploy.js --network localhost",
+    "deploy-bsc-testnet": "npx hardhat run scripts/deploy.js --network bsctestnet",
+    "deploy-one-testnet": "npx hardhat run scripts/deploy.js --network onetestnet",
+    "deploy-ropsten": "npx hardhat run scripts/deploy.js --network ropsten"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-web3": "^2.0.0",
