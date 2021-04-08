@@ -21,7 +21,6 @@ contract MOMA is ERC20PresetMinterPauser, ReentrancyGuard {
         uint256 releaseFrom;
     }
 
-    /// Private sale 5M
     uint256 public constant INITIAL_SUPPLY = 5000000 * DECIMAL_MULTIPLIER;
     uint256 public constant MAX_SUPPLY = 100000000 * DECIMAL_MULTIPLIER;
     uint256 public constant DECIMAL_MULTIPLIER = 10**18;

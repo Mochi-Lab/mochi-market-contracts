@@ -43,7 +43,7 @@ describe('MOMA Token', async () => {
       expect(isBlocked).to.equal(true);
     });
 
-    it('Admin can not add user to blacklist when blacklist effective time ended', async () => {
+    it('Admin cannot add user to blacklist when blacklist effective time ended', async () => {
       await time.increase(time.duration.days(blacklistEffectiveDuration));
       await expectRevert(
         moma.connect(admin).addToBlacklist(alice.address),
