@@ -21,15 +21,11 @@ contract MOMA is ERC20PresetMinterPauser, ReentrancyGuard {
         uint256 releaseFrom;
     }
 
-    /** Initial supply includes
-     * - private sale 5M
-     * - public sale 1.5M
-     * - DEX liquidity 1.5M
-     */
-    uint256 public constant INITIAL_SUPPLY = 8000000 * DECIMAL_MULTIPLIER;
+    /// Private sale 5M
+    uint256 public constant INITIAL_SUPPLY = 5000000 * DECIMAL_MULTIPLIER;
     uint256 public constant MAX_SUPPLY = 100000000 * DECIMAL_MULTIPLIER;
     uint256 public constant DECIMAL_MULTIPLIER = 10**18;
-    uint256 public constant BLACKLIST_LOCK_DURATION = 50 days;
+    uint256 public constant BLACKLIST_LOCK_DAYS = 50;
     uint256 public constant BLACKLIST_EFFECTIVE_DURATION = 30 days;
 
     uint256 public blacklistEffectiveEndtime;
@@ -114,12 +110,12 @@ contract MOMA is ERC20PresetMinterPauser, ReentrancyGuard {
         VestingInfo memory info = _vestingList[user];
         if (block.timestamp < info.releaseFrom) return 0;
         uint256 releasedAmount;
-        if (block.timestamp.sub(info.releaseFrom).add(1 days) >= info.vestingDays.mul(1 days)) {
+        if (block.timestamp.sub(info.releaseFrom).div(1 days) >= info.vestingDays) {
             releasedAmount = info.initAmount;
         } else {
-            releasedAmount = (block.timestamp.sub(info.releaseFrom).add(1 days))
+            releasedAmount = (block.timestamp.sub(info.releaseFrom).div(1 days))
                 .mul(info.initAmount)
-                .div(info.vestingDays.mul(1 days));
+                .div(info.vestingDays);
         }
         claimableAmount = 0;
         if (releasedAmount > info.claimedAmount) {
@@ -129,15 +125,16 @@ contract MOMA is ERC20PresetMinterPauser, ReentrancyGuard {
 
     function _getUnlockedBalance(address user) internal view returns (uint256 unlockedBalance) {
         BlacklistInfo memory info = _blacklist[user];
-        unlockedBalance = info.initLockedBalance;
+
         if (
             info.locked == true &&
-            block.timestamp >= info.lockedFrom &&
-            block.timestamp.sub(info.lockedFrom) < BLACKLIST_LOCK_DURATION
+            block.timestamp.sub(info.lockedFrom).div(1 days) < BLACKLIST_LOCK_DAYS
         ) {
-            unlockedBalance = (block.timestamp.sub(info.lockedFrom))
+            unlockedBalance = (block.timestamp.sub(info.lockedFrom).div(1 days))
                 .mul(info.initLockedBalance)
-                .div(BLACKLIST_LOCK_DURATION);
+                .div(BLACKLIST_LOCK_DAYS);
+        } else {
+            unlockedBalance = info.initLockedBalance;
         }
         return unlockedBalance;
     }

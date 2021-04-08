@@ -19,7 +19,7 @@ describe('MOMA Token', async () => {
       ecosystemFunds,
     ] = await ethers.getSigners();
 
-    const MochiToken = await ethers.getContractFactory('MOMA');
+    const MochiToken = await ethers.getContractFactory('contracts/MOMA.sol:MOMA');
     moma = await MochiToken.connect(admin).deploy();
     await moma.deployed();
   });
@@ -33,7 +33,7 @@ describe('MOMA Token', async () => {
 
   it('Init balance of admin', async () => {
     const adminBalance = await moma.balanceOf(admin.address);
-    expect(adminBalance).to.equal('8000000000000000000000000');
+    expect(adminBalance).to.equal('5000000000000000000000000');
   });
 
   describe('Blacklist', () => {
@@ -65,12 +65,10 @@ describe('MOMA Token', async () => {
       expect(await moma.balanceOf(charles.address)).to.equal('2000');
     });
 
-    it('User in blacklist cannot send any MOMA', async () => {
+    it('User in blacklist cannot send locked MOMA', async () => {
       await moma.connect(admin).mint(alice.address, '123456');
       await moma.connect(admin).addToBlacklist(alice.address);
       const remainLockedBalance = await moma.remainLockedBalance(alice.address);
-
-      let blacklistUser = await moma.getBlacklistByUser(alice.address);
       expect(remainLockedBalance).to.equal('123456');
 
       await expectRevert(
@@ -141,6 +139,7 @@ describe('MOMA Token', async () => {
 
         await expectRevert(moma.connect(team).claimVestingToken(), 'MOMA: Nothing to claim');
         await time.increase(time.duration.years(1));
+        await time.increase(time.duration.days(1));
         claimableAmount = await moma.getVestingClaimableAmount(team.address);
         expect(claimableAmount).to.equal('50000');
 
@@ -162,11 +161,11 @@ describe('MOMA Token', async () => {
 
       let claimableAmount;
       claimableAmount = await moma.getVestingClaimableAmount(developmentFunds.address);
-      expect(claimableAmount).to.gte(8888);
+      expect(claimableAmount).to.equal(0);
 
-      await time.increase(time.duration.days(29));
+      await time.increase(time.duration.days(1));
       claimableAmount = await moma.getVestingClaimableAmount(developmentFunds.address);
-      expect(claimableAmount).to.gte(266666);
+      expect(claimableAmount).to.gte(8888);
 
       await moma.connect(developmentFunds).claimVestingToken();
       await expectRevert(
@@ -174,9 +173,9 @@ describe('MOMA Token', async () => {
         'MOMA: Nothing to claim'
       );
 
-      await time.increase(time.duration.days(1770));
+      await time.increase(time.duration.days(1800));
       claimableAmount = await moma.getVestingClaimableAmount(developmentFunds.address);
-      expect(claimableAmount).to.gte(16000000 - 266667);
+      expect(claimableAmount).to.gte(16000000 - 8889);
     });
 
     it('Ecosystem funds lock up', async () => {
@@ -184,9 +183,9 @@ describe('MOMA Token', async () => {
 
       let claimableAmount;
       claimableAmount = await moma.getVestingClaimableAmount(ecosystemFunds.address);
-      expect(claimableAmount).to.gte(6388);
+      expect(claimableAmount).to.equal(0);
 
-      await time.increase(time.duration.days(29));
+      await time.increase(time.duration.days(30));
       claimableAmount = await moma.getVestingClaimableAmount(ecosystemFunds.address);
       expect(claimableAmount).to.gte(191666);
 
