@@ -1,5 +1,4 @@
 const { ethers } = require('hardhat');
-const { sleep } = require('sleep');
 
 async function main() {
   let royaltyNumerator = '20';
@@ -18,6 +17,12 @@ async function main() {
   let addressesProvider = await AddressesProvider.connect(deployer).deploy({
     gasLimit: 6721975,
   });
+  await addressesProvider.deployed();
+  // SetAdmin
+  console.log('\nSet Market Admin...');
+  await addressesProvider.connect(deployer).setAdmin(marketAdmin.address, {
+    gasLimit: 6721975,
+  });
 
   // Deploy NFTList contract
   console.log('\nDeploying NFTList...');
@@ -25,15 +30,14 @@ async function main() {
   let nftListImpl = await NFTList.connect(deployer).deploy({
     gasLimit: 6721975,
   });
+  await nftListImpl.deployed();
   let initData = nftListImpl.interface.encodeFunctionData('initialize', [
     addressesProvider.address,
   ]);
   console.log('\nSet NFTList Implementation...');
-  await addressesProvider
-    .connect(deployer)
-    .setNFTListImpl(nftListImpl.address, initData, {
-      gasLimit: 6721975,
-    });
+  await addressesProvider.connect(deployer).setNFTListImpl(nftListImpl.address, initData, {
+    gasLimit: 6721975,
+  });
 
   // Deploy Vault contract
   console.log('\nDeploying Vault...');
@@ -41,6 +45,7 @@ async function main() {
   let vaultImpl = await Vault.connect(deployer).deploy({
     gasLimit: 6721975,
   });
+  await vaultImpl.deployed();
   initData = vaultImpl.interface.encodeFunctionData('initialize', [
     addressesProvider.address,
     royaltyNumerator,
@@ -48,11 +53,9 @@ async function main() {
     nativeCoin,
   ]);
   console.log('\nSet Vault Implementation...');
-  await addressesProvider
-    .connect(deployer)
-    .setVaultImpl(vaultImpl.address, initData, {
-      gasLimit: 6721975,
-    });
+  await addressesProvider.connect(deployer).setVaultImpl(vaultImpl.address, initData, {
+    gasLimit: 6721975,
+  });
 
   // Deploy SellOrderList contract
   console.log('\nDeploying SellOrderListContract...');
@@ -60,6 +63,7 @@ async function main() {
   let sellOrderListImpl = await SellOrderList.connect(deployer).deploy({
     gasLimit: 6721975,
   });
+  await sellOrderListImpl.deployed();
   initData = sellOrderListImpl.interface.encodeFunctionData('initialize', [
     addressesProvider.address,
   ]);
@@ -76,6 +80,7 @@ async function main() {
   let exchangeOrderListImpl = await ExchangeOrderList.connect(deployer).deploy({
     gasLimit: 6721975,
   });
+  await exchangeOrderListImpl.deployed();
   initData = exchangeOrderListImpl.interface.encodeFunctionData('initialize', [
     addressesProvider.address,
   ]);
@@ -92,15 +97,17 @@ async function main() {
   let erc721Factory = await ERC721Factory.connect(deployer).deploy({
     gasLimit: 6721975,
   });
+  await erc721Factory.deployed();
   let ERC1155Factory = await ethers.getContractFactory('ERC1155Factory');
   let erc1155Factory = await ERC1155Factory.connect(deployer).deploy({
     gasLimit: 6721975,
   });
-
+  await erc1155Factory.deployed();
   let CreativeStudio = await ethers.getContractFactory('CreativeStudio');
   let creativeStudioImpl = await CreativeStudio.connect(deployer).deploy({
     gasLimit: 6721975,
   });
+  await creativeStudioImpl.deployed();
   initData = creativeStudioImpl.interface.encodeFunctionData('initialize', [
     addressesProvider.address,
     erc721Factory.address,
@@ -119,21 +126,14 @@ async function main() {
   let marketImpl = await Market.connect(deployer).deploy({
     gasLimit: 6721975,
   });
+  await marketImpl.deployed();
   initData = marketImpl.interface.encodeFunctionData('initialize', [
     addressesProvider.address,
     feeNumerator,
     feeDenominator,
   ]);
   console.log('\nSet Market Implementation...');
-  await addressesProvider
-    .connect(deployer)
-    .setMarketImpl(marketImpl.address, initData, {
-      gasLimit: 6721975,
-    });
-
-  // SetAdmin
-  console.log('\nSet Market Admin...');
-  await addressesProvider.connect(deployer).setAdmin(marketAdmin.address, {
+  await addressesProvider.connect(deployer).setMarketImpl(marketImpl.address, initData, {
     gasLimit: 6721975,
   });
 
@@ -142,8 +142,7 @@ async function main() {
   let mochi = await Mochi.connect(deployer).deploy({
     gasLimit: 6721975,
   });
-
-  sleep(10);
+  await mochi.deployed();
 
   let nftListAddress = await addressesProvider.getNFTList();
   let vaultAddress = await addressesProvider.getVault();
