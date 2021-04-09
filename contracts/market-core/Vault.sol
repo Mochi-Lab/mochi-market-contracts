@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.6.12;
 
-import "@openzeppelin/contracts/proxy/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
@@ -19,7 +18,7 @@ import "../interfaces/IAddressesProvider.sol";
  * @author MochiLab
  **/
 
-contract Vault is Initializable, ReentrancyGuard {
+contract Vault is ReentrancyGuardUpgradeable {
     using SafeMath for uint256;
     IAddressesProvider public addressesProvider;
 

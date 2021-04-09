@@ -1,82 +1,129 @@
-const hre = require("hardhat");
-const ethers = hre.ethers;
+const { ethers, upgrades } = require('hardhat');
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
+  const NFT_LIST = ethers.utils.formatBytes32String('NFT_LIST');
+  const VAULT = ethers.utils.formatBytes32String('VAULT');
+  const SELL_ORDER_LIST = ethers.utils.formatBytes32String('SELL_ORDER_LIST');
+  const EXCHANGE_ORDER_LIST = ethers.utils.formatBytes32String('EXCHANGE_ORDER_LIST');
+  const MARKET = ethers.utils.formatBytes32String('MARKET');
+  const ADMIN = ethers.utils.formatBytes32String('ADMIN');
+  const CREATIVE_STUDIO = ethers.utils.formatBytes32String('CREATIVE_STUDIO');
 
-  console.log("Deploying contracts with the account:", deployer.address);
-  const AddressesProvider = await hre.ethers.getContractFactory(
-    "AddressesProvider"
-  );
+  const royaltyNumerator = '20';
+  const royaltyDenominator = '100';
+  const feeNumerator = '25';
+  const feeDenominator = '1000';
+  const nativeCoin = 'BNB';
+
+  const [deployer, marketAdmin] = await ethers.getSigners();
+
+  /**
+   * AddressProvider
+   */
+  console.log('Deploying AddressesProvider...');
+  const AddressesProvider = await ethers.getContractFactory('AddressesProvider');
   const addressesProvider = await AddressesProvider.deploy();
-  await addressesProvider.setAdmin(deployer.address);
-  console.log("Address AddressesProvider", addressesProvider.address);
+  await addressesProvider.deployed();
+  // SetAdmin
+  console.log('Set Market Admin...');
+  await addressesProvider.setAdmin(marketAdmin.address);
 
-  // deploy an implementation of NFTList contract
-  let NFTList = await hre.ethers.getContractFactory("NFTList");
-  let nftListImpl = await NFTList.deploy();
-  console.log("Address NftListImpl", nftListImpl.address);
-  // get initData of NFTList contract
-  let initData = nftListImpl.interface.encodeFunctionData("initialize", [
+  /**
+   * NFTList
+   */
+  console.log('Deploying NFTList...');
+  const NFTList = await hre.ethers.getContractFactory('NFTList');
+  const nftList = await upgrades.deployProxy(NFTList, [addressesProvider.address]);
+  console.log('Deploy Mochi NFT...');
+  const Mochi = await ethers.getContractFactory('Mochi');
+  const mochi = await Mochi.deploy();
+  await mochi.deployed();
+
+  console.log('Register Mochi NFT...');
+  await nftList.connect(marketAdmin).registerNFT(mochi.address, false);
+  console.log('Accept Mochi NFT...');
+  await nftList.connect(marketAdmin).acceptNFT(mochi.address);
+
+  /**
+   * Vault
+   */
+  console.log('Deploying Vault...');
+  const Vault = await hre.ethers.getContractFactory('Vault');
+  const vault = await upgrades.deployProxy(Vault, [
+    addressesProvider.address,
+    royaltyNumerator,
+    royaltyDenominator,
+    nativeCoin,
+  ]);
+
+  /**
+   * SellOrderList
+   */
+  console.log('Deploying SellOrderListContract...');
+  const SellOrderList = await hre.ethers.getContractFactory('SellOrderList');
+  const sellOrderList = await upgrades.deployProxy(SellOrderList, [addressesProvider.address]);
+
+  /**
+   * ExchangeOrderList
+   */
+  console.log('Deploying ExchangeOrderList...');
+  const ExchangeOrderList = await hre.ethers.getContractFactory('ExchangeOrderList');
+  const exchangeOrderList = await upgrades.deployProxy(ExchangeOrderList, [
     addressesProvider.address,
   ]);
 
-  // call function setNFTListImpl() of AddressesProvider contract
-  await addressesProvider.setNFTListImpl(nftListImpl.address, initData, {
-    gasLimit: 30000000,
-  });
+  /**
+   * Creative Studio
+   */
+  console.log('Deploying CreativeStudio...');
+  const ERC721Factory = await ethers.getContractFactory('ERC721Factory');
+  const erc721Factory = await ERC721Factory.deploy();
+  await erc721Factory.deployed();
 
-  //******************** */
+  const ERC1155Factory = await ethers.getContractFactory('ERC1155Factory');
+  const erc1155Factory = await ERC1155Factory.deploy();
+  await erc1155Factory.deployed();
 
-  // deploy an implementation of Vault contract
-  let Vault = await hre.ethers.getContractFactory("Vault");
-  let vaultImpl = await Vault.deploy();
-  console.log("Address Vault", vaultImpl.address);
-  // get initData of Vault contract
-  initData = vaultImpl.interface.encodeFunctionData("initialize", [
+  const CreativeStudio = await ethers.getContractFactory('CreativeStudio');
+  const creativeStudio = await upgrades.deployProxy(CreativeStudio, [
     addressesProvider.address,
-  ]);
-  // call function setVaultImpl() of AddressesProvider contract
-  await addressesProvider.setVaultImpl(vaultImpl.address, initData, {
-    gasLimit: 30000000,
-  });
-
-  //******************** */
-
-  // deploy an implementation of SellOrderList contract
-  let SellOrderList = await hre.ethers.getContractFactory("SellOrderList");
-  let sellOrderListImpl = await SellOrderList.deploy();
-  console.log("Address SellOrderList", sellOrderListImpl.address);
-  // get initData of SellOrderList contract
-  initData = sellOrderListImpl.interface.encodeFunctionData("initialize", [
-    addressesProvider.address,
-  ]);
-  // call function setSellOrderListImpl() of AddressesProvider contract
-  await addressesProvider.setSellOrderListImpl(
-    sellOrderListImpl.address,
-    initData,
-    {
-      gasLimit: 30000000,
-    }
-  );
-
-  //******************** */
-
-  let Market = await hre.ethers.getContractFactory("Market");
-  let marketImpl = await Market.deploy();
-  console.log("Address Market", marketImpl.address);
-
-  // get initData of Market contract
-  initData = marketImpl.interface.encodeFunctionData("initialize", [
-    addressesProvider.address,
-    2,
-    1000,
+    erc721Factory.address,
+    erc1155Factory.address,
   ]);
 
-  // call function setMarketImpl() of AddressesProvider contract
-  await addressesProvider.setMarketImpl(marketImpl.address, initData, {
-    gasLimit: 30000000,
-  });
+  /**
+   * Market
+   */
+  console.log('Deploying Market...');
+  const Market = await hre.ethers.getContractFactory('Market');
+  const market = await upgrades.deployProxy(Market, [
+    addressesProvider.address,
+    feeNumerator,
+    feeDenominator,
+  ]);
+
+  console.log('Deploy Done! Store Addresses..');
+  await addressesProvider.setAddress(ADMIN, marketAdmin.address);
+  await addressesProvider.setAddress(NFT_LIST, nftList.address);
+  await addressesProvider.setAddress(VAULT, vault.address);
+  await addressesProvider.setAddress(SELL_ORDER_LIST, sellOrderList.address);
+  await addressesProvider.setAddress(EXCHANGE_ORDER_LIST, exchangeOrderList.address);
+  await addressesProvider.setAddress(MARKET, market.address);
+  await addressesProvider.setAddress(CREATIVE_STUDIO, creativeStudio.address);
+
+  console.log('Result');
+  console.log('================Non-upgradeable================');
+  console.log('Deployer - AdminProxy:', deployer.address);
+  console.log('Market Admin: ', marketAdmin.address);
+  console.log('AddressesProvider: ', addressesProvider.address);
+  console.log('Mochi NFT: ', mochi.address);
+  console.log('===============Upgradeable proxies==============');
+  console.log('NFTList: ', nftList.address);
+  console.log('Vault: ', vault.address);
+  console.log('SellOrderList: ', sellOrderList.address);
+  console.log('ExchangeOrderList: ', exchangeOrderList.address);
+  console.log('CreativeStudio: ', creativeStudio.address);
+  console.log('Market: ', market.address);
 }
 
 main()

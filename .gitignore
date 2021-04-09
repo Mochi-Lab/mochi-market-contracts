@@ -7,3 +7,6 @@ yarn.lock
 contracts/flatten
 .vscode
 package-lock.json
+
+.openzeppelin/unknown-*.json
+.DS_Store

@@ -2,9 +2,8 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
@@ -22,7 +21,7 @@ import "../interfaces/IExchangeOrderList.sol";
  * - Owned by the MochiLab
  * @author MochiLab
  **/
-contract Market is Initializable, ReentrancyGuard {
+contract Market is ReentrancyGuardUpgradeable {
     using SafeMath for uint256;
 
     IAddressesProvider public addressesProvider;
@@ -306,11 +305,7 @@ contract Market is Initializable, ReentrancyGuard {
                 Errors.NFT_NOT_APPROVED_FOR_MARKET
             );
             require(
-                !exchangeOrderList.checkDuplicate_ERC1155(
-                    nftAddresses[0],
-                    tokenIds[0],
-                    msg.sender
-                ),
+                !exchangeOrderList.checkDuplicate_ERC1155(nftAddresses[0], tokenIds[0], msg.sender),
                 Errors.EXCHANGE_ORDER_DUPLICATE
             );
         } else {
@@ -430,10 +425,7 @@ contract Market is Initializable, ReentrancyGuard {
         }
         uint256 fee = calculateFee(exchangeOrder.prices[destinationId]);
         if (exchangeOrder.tokens[destinationId] == address(0)) {
-            require(
-                msg.value == exchangeOrder.prices[destinationId],
-                Errors.VALUE_NOT_EQUAL_PRICE
-            );
+            require(msg.value == exchangeOrder.prices[destinationId], Errors.VALUE_NOT_EQUAL_PRICE);
             payable(exchangeOrder.users[0]).transfer(exchangeOrder.prices[destinationId].sub(fee));
             if (fee > 0) {
                 vault.deposit{value: fee}(

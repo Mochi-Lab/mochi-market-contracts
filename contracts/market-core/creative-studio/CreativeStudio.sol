@@ -2,9 +2,7 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/proxy/Initializable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-
+import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "../../interfaces/IAddressesProvider.sol";
 import "../../interfaces/INFTList.sol";
 import "../../interfaces/IERC721Factory.sol";
@@ -15,7 +13,7 @@ import "../../libraries/types/DataTypes.sol";
  * @title CreativeStudio contract
  * @author MochiLab
  **/
-contract CreativeStudio is Initializable, ReentrancyGuard {
+contract CreativeStudio is ReentrancyGuardUpgradeable {
     IAddressesProvider public addressesProvider;
     INFTList public nftList;
     IERC721Factory public erc721Factory;
@@ -28,8 +26,6 @@ contract CreativeStudio is Initializable, ReentrancyGuard {
     event Initialized(address indexed provider);
 
     event CollectionCreated(address user, address collection, bool isERC1155);
-
-    constructor() public {}
 
     /**
      * @dev Function is invoked by the proxy contract when the CreativeStudio contract is added to the
