@@ -10,16 +10,16 @@ import "@openzeppelin/contracts/utils/Counters.sol";
  * - Owned by the MochiLab
  * @author MochiLab
  **/
-contract Mochi is ERC721 {
+contract MochiNFT is ERC721 {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
     modifier onlyOwnerOf(uint256 _tokenId) {
-        require(msg.sender == ownerOf(_tokenId));
+        require(_msgSender() == ownerOf(_tokenId));
         _;
     }
 
-    constructor() public ERC721("Mochi", "MOC") {}
+    constructor() public ERC721("Mochi Market NFT", "MOMANFT") {}
 
     function mint(address to, string memory tokenUri) external {
         _tokenIds.increment();
