@@ -23,6 +23,6 @@ contract MochiRewardToken is ERC20, Ownable {
     }
 
     function burn(uint256 amount) external {
-        _burn(msg.sender, amount);
+        _burn(_msgSender(), amount);
     }
 }
