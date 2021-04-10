@@ -84,6 +84,19 @@ describe('MOMA Token', () => {
       );
     });
 
+    it('No remain locked balance after 50 days', async () => {
+      await moma.connect(admin).mint(alice.address, '1000');
+      await moma.connect(admin).addToBlacklist(alice.address);
+
+      await time.increase(time.duration.days(50));
+      let remainLockedBalance;
+      remainLockedBalance = await moma.remainLockedBalance(alice.address);
+      expect(remainLockedBalance).to.equal('0');
+      await time.increase(time.duration.days(90));
+      remainLockedBalance = await moma.remainLockedBalance(alice.address);
+      expect(remainLockedBalance).to.equal('0');
+    });
+
     it('User in blacklist can claim token daily in 50 days', async () => {
       await moma.connect(admin).mint(alice.address, '1000');
       await moma.connect(admin).addToBlacklist(alice.address);

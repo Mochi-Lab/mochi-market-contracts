@@ -81,11 +81,10 @@ contract MOMA is ERC20PresetMinterPauser, ReentrancyGuard {
 
     function _getUnlockedBalance(address user) internal view returns (uint256 unlockedBalance) {
         BlacklistInfo memory info = _blacklist[user];
+        uint256 daysPassed = block.timestamp.sub(info.lockedFrom).div(1 days);
 
-        if (info.locked && block.timestamp.sub(info.lockedFrom).div(1 days) < BLACKLIST_LOCK_DAYS) {
-            unlockedBalance = (block.timestamp.sub(info.lockedFrom).div(1 days))
-                .mul(info.initLockedBalance)
-                .div(BLACKLIST_LOCK_DAYS);
+        if (info.locked && daysPassed < BLACKLIST_LOCK_DAYS) {
+            unlockedBalance = daysPassed.mul(info.initLockedBalance).div(BLACKLIST_LOCK_DAYS);
         } else {
             unlockedBalance = info.initLockedBalance;
         }
