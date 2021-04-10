@@ -7,3 +7,5 @@ yarn.lock
 contracts/flatten
 .vscode
 package-lock.json
+
+.DS_Store
