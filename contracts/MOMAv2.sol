@@ -15,7 +15,7 @@ contract MOMA is ERC20PresetMinterPauser, ReentrancyGuard {
     }
 
     struct VestingInfo {
-        address beneficiary;
+        bool isActive;
         uint256 amount;
         uint256 startTime;
         uint256 claimedAmount;
@@ -27,8 +27,7 @@ contract MOMA is ERC20PresetMinterPauser, ReentrancyGuard {
     uint256 private _blacklistEffectiveEndtime;
     mapping(address => BlacklistInfo) private _blacklist;
 
-    mapping(address => VestingInfo) private _userToVesting;
-    mapping(address => bool) private _isInVestingList;
+    mapping(address => VestingInfo) private _vestingList;
 
     uint256 public constant INITIAL_SUPPLY = 5000000 * DECIMAL_MULTIPLIER;
     uint256 public constant MAX_SUPPLY = 100000000 * DECIMAL_MULTIPLIER;
@@ -43,11 +42,6 @@ contract MOMA is ERC20PresetMinterPauser, ReentrancyGuard {
 
     modifier onlyMinter() {
         require(hasRole(MINTER_ROLE, _msgSender()), "MOMA: MINTER role required");
-        _;
-    }
-
-    modifier onlyInVestingList() {
-        require(_isInVestingList[_msgSender()], "MOMA: Not in vesting list");
         _;
     }
 
@@ -102,10 +96,10 @@ contract MOMA is ERC20PresetMinterPauser, ReentrancyGuard {
         uint256 daysPerRound
     ) external onlyAdmin {
         require(beneficiary != address(0), "MOMA: Zero address");
-        require(!_isInVestingList[beneficiary], "MOMA: Invalid vesting");
+        require(!_vestingList[beneficiary].isActive, "MOMA: Invalid vesting");
         VestingInfo memory info =
             VestingInfo(
-                beneficiary,
+                true,
                 amount,
                 block.timestamp,
                 0,
@@ -113,21 +107,19 @@ contract MOMA is ERC20PresetMinterPauser, ReentrancyGuard {
                 releaseTotalRounds,
                 daysPerRound
             );
-        _userToVesting[beneficiary] = info;
-        _isInVestingList[beneficiary] = true;
+        _vestingList[beneficiary] = info;
     }
 
     function revokeVestingToken(address user) external onlyAdmin {
-        require(_isInVestingList[user], "MOMA: Invalid beneficiary");
+        require(_vestingList[user].isActive, "MOMA: Invalid beneficiary");
         uint256 claimableAmount = _getVestingClaimableAmount(user);
         require(totalSupply().add(claimableAmount) <= MAX_SUPPLY, "MOMA: Max supply exceeded");
-        _isInVestingList[user] = false;
-        _userToVesting[user] = VestingInfo(address(0), 0, 0, 0, 0, 0, 0);
+        _vestingList[user].isActive = false;
         _mint(user, claimableAmount);
     }
 
     function getVestingInfoByUser(address user) external view returns (VestingInfo memory) {
-        return _userToVesting[user];
+        return _vestingList[user];
     }
 
     function _getVestingClaimableAmount(address user)
@@ -135,8 +127,8 @@ contract MOMA is ERC20PresetMinterPauser, ReentrancyGuard {
         view
         returns (uint256 claimableAmount)
     {
-        if (!_isInVestingList[user]) return 0;
-        VestingInfo memory info = _userToVesting[user];
+        if (!_vestingList[user].isActive) return 0;
+        VestingInfo memory info = _vestingList[user];
         uint256 releaseTime = info.startTime.add(info.fullLockedDays.mul(1 days));
         if (block.timestamp < releaseTime) return 0;
         uint256 roundsPassed =
@@ -158,11 +150,12 @@ contract MOMA is ERC20PresetMinterPauser, ReentrancyGuard {
         return _getVestingClaimableAmount(user);
     }
 
-    function claimVestingToken() external nonReentrant onlyInVestingList returns (uint256) {
+    function claimVestingToken() external nonReentrant returns (uint256) {
+        require(_vestingList[_msgSender()].isActive, "MOMA: Not in vesting list");
         uint256 claimableAmount = _getVestingClaimableAmount(_msgSender());
         require(claimableAmount > 0, "MOMA: Nothing to claim");
         require(totalSupply().add(claimableAmount) <= MAX_SUPPLY, "MOMA: Max supply exceeded");
-        _userToVesting[_msgSender()].claimedAmount = _userToVesting[_msgSender()].claimedAmount.add(
+        _vestingList[_msgSender()].claimedAmount = _vestingList[_msgSender()].claimedAmount.add(
             claimableAmount
         );
         _mint(_msgSender(), claimableAmount);
