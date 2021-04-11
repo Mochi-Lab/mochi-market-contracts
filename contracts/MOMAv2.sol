@@ -117,6 +117,15 @@ contract MOMA is ERC20PresetMinterPauser, ReentrancyGuard {
         _isInVestingList[beneficiary] = true;
     }
 
+    function revokeVestingToken(address user) external onlyAdmin {
+        require(_isInVestingList[user], "MOMA: Invalid beneficiary");
+        uint256 claimableAmount = _getVestingClaimableAmount(user);
+        require(totalSupply().add(claimableAmount) <= MAX_SUPPLY, "MOMA: Max supply exceeded");
+        _isInVestingList[user] = false;
+        _userToVesting[user] = VestingInfo(address(0), 0, 0, 0, 0, 0, 0);
+        _mint(user, claimableAmount);
+    }
+
     function getVestingInfoByUser(address user) external view returns (VestingInfo memory) {
         return _userToVesting[user];
     }
@@ -126,6 +135,7 @@ contract MOMA is ERC20PresetMinterPauser, ReentrancyGuard {
         view
         returns (uint256 claimableAmount)
     {
+        if (!_isInVestingList[user]) return 0;
         VestingInfo memory info = _userToVesting[user];
         uint256 releaseTime = info.startTime.add(info.fullLockedDays.mul(1 days));
         if (block.timestamp < releaseTime) return 0;

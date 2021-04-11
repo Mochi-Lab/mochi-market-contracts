@@ -209,6 +209,22 @@ describe('MOMA Token', () => {
         await expectRevert(moma.connect(team).claimVestingToken(), 'MOMA: Nothing to claim');
       });
 
+      it('Revoke Vesting', async () => {
+        let claimableAmount;
+        await time.increase(time.duration.days(400));
+        claimableAmount = await moma.getVestingClaimableAmount(team.address);
+        expect(claimableAmount).to.equal('1500000');
+        await moma.connect(team).claimVestingToken();
+        await time.increase(time.duration.days(50));
+        claimableAmount = await moma.getVestingClaimableAmount(team.address);
+        expect(claimableAmount).to.equal('3000000');
+        await moma.connect(admin).revokeVestingToken(team.address);
+        expect(await moma.balanceOf(team.address)).to.equal('4500000');
+        claimableAmount = await moma.getVestingClaimableAmount(team.address);
+        expect(claimableAmount).to.equal('0');
+        await expectRevert(moma.connect(team).claimVestingToken(), 'MOMA: Not in vesting list');
+      });
+
       it('After 720 days, claimable amount is 18,000,000', async () => {
         let claimableAmount;
         await time.increase(time.duration.days(720));
@@ -296,6 +312,25 @@ describe('MOMA Token', () => {
         await expectRevert(
           moma.connect(developmentFunds).claimVestingToken(),
           'MOMA: Nothing to claim'
+        );
+      });
+
+      it('Revoke Vesting', async () => {
+        let claimableAmount;
+        await time.increase(time.duration.days(30));
+        claimableAmount = await moma.getVestingClaimableAmount(developmentFunds.address);
+        expect(claimableAmount).to.gte('266666');
+        await moma.connect(developmentFunds).claimVestingToken();
+        await time.increase(time.duration.days(30));
+        claimableAmount = await moma.getVestingClaimableAmount(developmentFunds.address);
+        expect(claimableAmount).to.gte('266666');
+        await moma.connect(admin).revokeVestingToken(developmentFunds.address);
+        expect(await moma.balanceOf(developmentFunds.address)).to.equal('533333');
+        claimableAmount = await moma.getVestingClaimableAmount(developmentFunds.address);
+        expect(claimableAmount).to.equal('0');
+        await expectRevert(
+          moma.connect(developmentFunds).claimVestingToken(),
+          'MOMA: Not in vesting list'
         );
       });
 
@@ -392,6 +427,25 @@ describe('MOMA Token', () => {
         );
       });
 
+      it('Revoke Vesting', async () => {
+        let claimableAmount;
+        await time.increase(time.duration.days(30));
+        claimableAmount = await moma.getVestingClaimableAmount(ecosystemFunds.address);
+        expect(claimableAmount).to.equal('383333');
+        await moma.connect(ecosystemFunds).claimVestingToken();
+        await time.increase(time.duration.days(30));
+        claimableAmount = await moma.getVestingClaimableAmount(ecosystemFunds.address);
+        expect(claimableAmount).to.equal('383333');
+        await moma.connect(admin).revokeVestingToken(ecosystemFunds.address);
+        expect(await moma.balanceOf(ecosystemFunds.address)).to.gte('766666');
+        claimableAmount = await moma.getVestingClaimableAmount(ecosystemFunds.address);
+        expect(claimableAmount).to.equal('0');
+        await expectRevert(
+          moma.connect(ecosystemFunds).claimVestingToken(),
+          'MOMA: Not in vesting list'
+        );
+      });
+
       it('After 1770 days, claimable amount is greater than 22,616,666', async () => {
         let claimableAmount;
         await time.increase(time.duration.days(1770));
@@ -484,6 +538,25 @@ describe('MOMA Token', () => {
           );
         });
 
+        it('Revoke Vesting', async () => {
+          let claimableAmount;
+          await time.increase(time.duration.days(30));
+          claimableAmount = await moma.getVestingClaimableAmount(ecosystemFunds.address);
+          expect(claimableAmount).to.gte('369166');
+          await moma.connect(ecosystemFunds).claimVestingToken();
+          await time.increase(time.duration.days(30));
+          claimableAmount = await moma.getVestingClaimableAmount(ecosystemFunds.address);
+          expect(claimableAmount).to.gte('369166');
+          await moma.connect(admin).revokeVestingToken(ecosystemFunds.address);
+          expect(await moma.balanceOf(ecosystemFunds.address)).to.equal('738333');
+          claimableAmount = await moma.getVestingClaimableAmount(ecosystemFunds.address);
+          expect(claimableAmount).to.equal('0');
+          await expectRevert(
+            moma.connect(ecosystemFunds).claimVestingToken(),
+            'MOMA: Not in vesting list'
+          );
+        });
+
         it('After 1770 days, claimable amount is greater than 21,780,833', async () => {
           let claimableAmount;
           await time.increase(time.duration.days(1770));
@@ -565,6 +638,22 @@ describe('MOMA Token', () => {
           claimableAmount = await moma.getVestingClaimableAmount(bob.address);
           expect(claimableAmount).to.equal('0');
           await expectRevert(moma.connect(bob).claimVestingToken(), 'MOMA: Nothing to claim');
+        });
+
+        it('Revoke Vesting', async () => {
+          let claimableAmount;
+          await time.increase(time.duration.days(210));
+          claimableAmount = await moma.getVestingClaimableAmount(bob.address);
+          expect(claimableAmount).to.gte('141666');
+          await moma.connect(bob).claimVestingToken();
+          await time.increase(time.duration.days(30));
+          claimableAmount = await moma.getVestingClaimableAmount(bob.address);
+          expect(claimableAmount).to.gte('141666');
+          await moma.connect(admin).revokeVestingToken(bob.address);
+          expect(await moma.balanceOf(bob.address)).to.equal('283333');
+          claimableAmount = await moma.getVestingClaimableAmount(bob.address);
+          expect(claimableAmount).to.equal('0');
+          await expectRevert(moma.connect(bob).claimVestingToken(), 'MOMA: Not in vesting list');
         });
 
         it('After 360 days, claimable amount is 850,000', async () => {
