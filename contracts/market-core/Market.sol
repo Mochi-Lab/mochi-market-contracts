@@ -25,6 +25,7 @@ import "../interfaces/IExchangeOrderList.sol";
 contract Market is Initializable, ReentrancyGuard {
     using SafeMath for uint256;
 
+    uint256 public constant SAFE_NUMBER = 1e12;
     IAddressesProvider public addressesProvider;
     INFTList public nftList;
     ISellOrderList public sellOrderList;
@@ -32,9 +33,8 @@ contract Market is Initializable, ReentrancyGuard {
     IExchangeOrderList public exchangeOrderList;
 
     mapping(address => bool) public acceptedToken;
-    uint256 internal feeNumerator;
-    uint256 internal feeDenominator;
-    uint256 internal constant SAFE_NUMBER = 1e12;
+    uint256 internal _feeNumerator;
+    uint256 internal _feeDenominator;
 
     event Initialized(address indexed provider, uint256 numerator, uint256 denominator);
 
@@ -65,8 +65,8 @@ contract Market is Initializable, ReentrancyGuard {
         sellOrderList = ISellOrderList(addressesProvider.getSellOrderList());
         exchangeOrderList = IExchangeOrderList(addressesProvider.getExchangeOrderList());
         vault = IVault(addressesProvider.getVault());
-        feeNumerator = numerator;
-        feeDenominator = denominator;
+        _feeNumerator = numerator;
+        _feeDenominator = denominator;
         acceptedToken[address(0)] = true;
         emit Initialized(provider, numerator, denominator);
     }
@@ -102,8 +102,8 @@ contract Market is Initializable, ReentrancyGuard {
      **/
     function updateFee(uint256 numerator, uint256 denominator) external onlyMarketAdmin {
         require(denominator >= numerator, Errors.DEMONINATOR_NOT_GREATER_THAN_NUMERATOR);
-        feeNumerator = numerator;
-        feeDenominator = denominator;
+        _feeNumerator = numerator;
+        _feeDenominator = denominator;
         emit FeeUpdated(numerator, denominator);
     }
 
@@ -191,7 +191,7 @@ contract Market is Initializable, ReentrancyGuard {
         require(amount > 0, Errors.AMOUNT_IS_ZERO);
         require(amount <= sellOrder.amount.sub(sellOrder.soldAmount), Errors.AMOUNT_IS_NOT_ENOUGH);
         uint256 price = amount.mul(sellOrder.price);
-        uint256 fee = calculateFee(price);
+        uint256 fee = _calculateFee(price);
 
         if (sellOrder.token == address(0)) {
             require(msg.value == price, Errors.VALUE_NOT_EQUAL_PRICE);
@@ -306,11 +306,7 @@ contract Market is Initializable, ReentrancyGuard {
                 Errors.NFT_NOT_APPROVED_FOR_MARKET
             );
             require(
-                !exchangeOrderList.checkDuplicate_ERC1155(
-                    nftAddresses[0],
-                    tokenIds[0],
-                    msg.sender
-                ),
+                !exchangeOrderList.checkDuplicate_ERC1155(nftAddresses[0], tokenIds[0], msg.sender),
                 Errors.EXCHANGE_ORDER_DUPLICATE
             );
         } else {
@@ -428,12 +424,9 @@ contract Market is Initializable, ReentrancyGuard {
                 exchangeOrder.tokenIds[0]
             );
         }
-        uint256 fee = calculateFee(exchangeOrder.prices[destinationId]);
+        uint256 fee = _calculateFee(exchangeOrder.prices[destinationId]);
         if (exchangeOrder.tokens[destinationId] == address(0)) {
-            require(
-                msg.value == exchangeOrder.prices[destinationId],
-                Errors.VALUE_NOT_EQUAL_PRICE
-            );
+            require(msg.value == exchangeOrder.prices[destinationId], Errors.VALUE_NOT_EQUAL_PRICE);
             payable(exchangeOrder.users[0]).transfer(exchangeOrder.prices[destinationId].sub(fee));
             if (fee > 0) {
                 vault.deposit{value: fee}(
@@ -473,7 +466,7 @@ contract Market is Initializable, ReentrancyGuard {
      * @return Fee numerator and denominator
      **/
     function getFee() external view returns (uint256, uint256) {
-        return (feeNumerator, feeDenominator);
+        return (_feeNumerator, _feeDenominator);
     }
 
     /**
@@ -482,8 +475,8 @@ contract Market is Initializable, ReentrancyGuard {
      * @param price The price of transaction
      * @return Fee of transaction
      **/
-    function calculateFee(uint256 price) internal view returns (uint256) {
-        uint256 fee = ((price * SAFE_NUMBER * feeNumerator) / feeDenominator) / SAFE_NUMBER;
+    function _calculateFee(uint256 price) internal view returns (uint256) {
+        uint256 fee = ((price * SAFE_NUMBER * _feeNumerator) / _feeDenominator) / SAFE_NUMBER;
         return fee;
     }
 }

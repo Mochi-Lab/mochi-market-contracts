@@ -540,8 +540,7 @@ contract SellOrderList is Initializable {
     ) external view returns (bool) {
         for (uint256 i = 0; i < _sellerToAvailableOrders_ERC1155[seller].length; i++) {
             if (
-                _sellOrders[_sellerToAvailableOrders_ERC1155[seller][i]].nftAddress ==
-                nftAddress &&
+                _sellOrders[_sellerToAvailableOrders_ERC1155[seller][i]].nftAddress == nftAddress &&
                 _sellOrders[_sellerToAvailableOrders_ERC1155[seller][i]].tokenId == tokenId
             ) {
                 return true;

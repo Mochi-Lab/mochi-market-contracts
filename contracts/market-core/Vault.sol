@@ -21,6 +21,9 @@ import "../interfaces/IAddressesProvider.sol";
 
 contract Vault is Initializable, ReentrancyGuard {
     using SafeMath for uint256;
+
+    uint256 public constant SAFE_NUMBER = 1e12;
+
     IAddressesProvider public addressesProvider;
 
     // MochiLab tokens balance
@@ -54,7 +57,6 @@ contract Vault is Initializable, ReentrancyGuard {
     uint256 internal _royaltyNumerator;
     // Royalty denominator
     uint256 internal _royaltyDenominator;
-    uint256 internal constant SAFE_NUMBER = 1e12;
 
     event Initialized(
         address indexed provider,
@@ -163,7 +165,7 @@ contract Vault is Initializable, ReentrancyGuard {
             ERC20(token).transferFrom(msg.sender, address(this), amount);
         }
 
-        uint256 forRoyalty = calculateRoyalty(amount);
+        uint256 forRoyalty = _calculateRoyalty(amount);
 
         if (forRoyalty > 0) {
             _nftToRoyalty[nftAddress][token] = _nftToRoyalty[nftAddress][token].add(forRoyalty);
@@ -341,7 +343,7 @@ contract Vault is Initializable, ReentrancyGuard {
         }
     }
 
-    function calculateRoyalty(uint256 amount) internal view returns (uint256) {
+    function _calculateRoyalty(uint256 amount) internal view returns (uint256) {
         uint256 royaltyAmount =
             ((amount * SAFE_NUMBER * _royaltyNumerator) / _royaltyDenominator) / SAFE_NUMBER;
         return royaltyAmount;

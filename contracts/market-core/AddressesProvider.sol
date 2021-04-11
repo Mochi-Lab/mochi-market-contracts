@@ -32,8 +32,6 @@ contract AddressesProvider is Ownable {
     event ExchangeOrderListUpdated(address indexed newAddress);
     event AddressSet(bytes32 id, address indexed newAddress, bool hasProxy);
 
-    constructor() public {}
-
     /**
      * @dev The functions below are getters/setters of addresses that are outside the context
      * of the protocol hence the upgradable proxy pattern is not used
@@ -138,10 +136,7 @@ contract AddressesProvider is Ownable {
      * @param creativeStudio The new CreativeStudio implementation
      * @param params The calldata for initialize in the new implementation (if required)
      **/
-    function setCreativeStudioImpl(address creativeStudio, bytes memory params)
-        external
-        onlyOwner
-    {
+    function setCreativeStudioImpl(address creativeStudio, bytes memory params) external onlyOwner {
         _updateImpl(CREATIVE_STUDIO, creativeStudio, params);
         emit CreativeStudioUpdated(creativeStudio);
     }
