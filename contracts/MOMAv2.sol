@@ -27,7 +27,6 @@ contract MOMA is ERC20PresetMinterPauser, ReentrancyGuard {
     uint256 private _blacklistEffectiveEndtime;
     mapping(address => BlacklistInfo) private _blacklist;
 
-    VestingInfo[] private _vestingList;
     mapping(address => VestingInfo) private _userToVesting;
     mapping(address => bool) private _isInVestingList;
 
@@ -114,13 +113,8 @@ contract MOMA is ERC20PresetMinterPauser, ReentrancyGuard {
                 releaseTotalRounds,
                 daysPerRound
             );
-        _vestingList.push(info);
         _userToVesting[beneficiary] = info;
         _isInVestingList[beneficiary] = true;
-    }
-
-    function getVestingInfoById(uint256 vestingId) external view returns (VestingInfo memory) {
-        return _vestingList[vestingId];
     }
 
     function getVestingInfoByUser(address user) external view returns (VestingInfo memory) {
