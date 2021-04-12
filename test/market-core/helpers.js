@@ -17,9 +17,7 @@ exports.deployNFTListImpl = async (deployer) => {
 
 exports.deployNFTListWithInitData = async (deployer, provider) => {
   let nftListImpl = await this.deployNFTListImpl(deployer);
-  let initData = nftListImpl.interface.encodeFunctionData('initialize', [
-    provider,
-  ]);
+  let initData = nftListImpl.interface.encodeFunctionData('initialize', [provider]);
 
   return { nftListImpl, initData };
 };
@@ -38,10 +36,7 @@ exports.deployNFTListProxyAndSetAddress = async (
     .connect(addressesProviderOwner)
     .setNFTListImpl(nftListImpl.address, initData);
 
-  let nftListProxy = await ethers.getContractAt(
-    'NFTList',
-    await addressesProvider.getNFTList()
-  );
+  let nftListProxy = await ethers.getContractAt('NFTList', await addressesProvider.getNFTList());
 
   return { nftListProxy, addressesProvider };
 };
@@ -74,14 +69,9 @@ exports.deployVaultProxyAndSetAddress = async (
     addressesProvider.address
   );
 
-  await addressesProvider
-    .connect(addressesProviderOwner)
-    .setVaultImpl(vaultImpl.address, initData);
+  await addressesProvider.connect(addressesProviderOwner).setVaultImpl(vaultImpl.address, initData);
 
-  let vaultProxy = await ethers.getContractAt(
-    'Vault',
-    await addressesProvider.getVault()
-  );
+  let vaultProxy = await ethers.getContractAt('Vault', await addressesProvider.getVault());
 
   return { vaultProxy, addressesProvider };
 };
@@ -94,9 +84,7 @@ exports.deploySellOrderListImpl = async (deployer) => {
 
 exports.deploySellOrderListWithInitData = async (deployer, provider) => {
   let sellOrderListImpl = await this.deploySellOrderListImpl(deployer);
-  let initData = sellOrderListImpl.interface.encodeFunctionData('initialize', [
-    provider,
-  ]);
+  let initData = sellOrderListImpl.interface.encodeFunctionData('initialize', [provider]);
 
   return { sellOrderListImpl, initData };
 };
@@ -106,10 +94,7 @@ exports.deploySellOrderListProxyAndSetAddress = async (
   addressesProvider,
   addressesProviderOwner
 ) => {
-  let {
-    sellOrderListImpl,
-    initData,
-  } = await this.deploySellOrderListWithInitData(
+  let { sellOrderListImpl, initData } = await this.deploySellOrderListWithInitData(
     deployer,
     addressesProvider.address
   );
@@ -157,10 +142,7 @@ exports.deployMarketProxyAndSetAddress = async (
     .connect(addressesProviderOwner)
     .setMarketImpl(marketImpl.address, initData);
 
-  let marketProxy = await ethers.getContractAt(
-    'Market',
-    await addressesProvider.getMarket()
-  );
+  let marketProxy = await ethers.getContractAt('Market', await addressesProvider.getMarket());
 
   return { marketProxy, addressesProvider };
 };
@@ -186,14 +168,8 @@ exports.deployCreativeStudioImpl = async (deployer) => {
 exports.deployCreativeStudioWithInitData = async (deployer, provider) => {
   let creativeStudioImpl = await this.deployCreativeStudioImpl(deployer);
 
-  let erc721FactoryImpl = await this.deployERC721FactoryImpl(
-    deployer,
-    provider
-  );
-  let erc1155FactoryImpl = await this.deployERC1155FactoryImpl(
-    deployer,
-    provider
-  );
+  let erc721FactoryImpl = await this.deployERC721FactoryImpl(deployer, provider);
+  let erc1155FactoryImpl = await this.deployERC1155FactoryImpl(deployer, provider);
   let initData = creativeStudioImpl.interface.encodeFunctionData('initialize', [
     provider,
     erc721FactoryImpl.address,
@@ -208,10 +184,7 @@ exports.deployCreativeStudioProxyAndSetAddress = async (
   addressesProvider,
   addressesProviderOwner
 ) => {
-  let {
-    creativeStudioImpl,
-    initData,
-  } = await this.deployCreativeStudioWithInitData(
+  let { creativeStudioImpl, initData } = await this.deployCreativeStudioWithInitData(
     deployer,
     addressesProvider.address
   );
@@ -230,18 +203,13 @@ exports.deployCreativeStudioProxyAndSetAddress = async (
 
 exports.deployExchangeOrderListImpl = async (deployer) => {
   let ExchangeOrderList = await ethers.getContractFactory('ExchangeOrderList');
-  let exchangeOrderListImpl = await ExchangeOrderList.connect(
-    deployer
-  ).deploy();
+  let exchangeOrderListImpl = await ExchangeOrderList.connect(deployer).deploy();
   return exchangeOrderListImpl;
 };
 
 exports.deployExchangeOrderListWithInitData = async (deployer, provider) => {
   let exchangeOrderListImpl = await this.deployExchangeOrderListImpl(deployer);
-  let initData = exchangeOrderListImpl.interface.encodeFunctionData(
-    'initialize',
-    [provider]
-  );
+  let initData = exchangeOrderListImpl.interface.encodeFunctionData('initialize', [provider]);
 
   return { exchangeOrderListImpl, initData };
 };
@@ -251,10 +219,7 @@ exports.deployExchangeOrderListProxyAndSetAddress = async (
   addressesProvider,
   addressesProviderOwner
 ) => {
-  let {
-    exchangeOrderListImpl,
-    initData,
-  } = await this.deployExchangeOrderListWithInitData(
+  let { exchangeOrderListImpl, initData } = await this.deployExchangeOrderListWithInitData(
     deployer,
     addressesProvider.address
   );
@@ -271,12 +236,7 @@ exports.deployExchangeOrderListProxyAndSetAddress = async (
   return { exchangeOrderListProxy, addressesProvider };
 };
 
-exports.allSetup = async (
-  deployer,
-  addressesProvider,
-  addressesProviderOwner,
-  marketAdmin
-) => {
+exports.allSetup = async (deployer, addressesProvider, addressesProviderOwner, marketAdmin) => {
   let data;
   let nftListProxy,
     vaultProxy,
@@ -341,9 +301,7 @@ exports.allSetup = async (
   addressesProvider = data.addressesProvider;
   exchangeOrderListProxy = data.exchangeOrderListProxy;
 
-  await addressesProvider
-    .connect(addressesProviderOwner)
-    .setAdmin(marketAdmin.address);
+  await addressesProvider.connect(addressesProviderOwner).setAdmin(marketAdmin.address);
 
   return {
     nftListProxy,
@@ -360,4 +318,16 @@ exports.deployTestERC721 = async (deployer, name, symbol) => {
   let TestERC721 = await ethers.getContractFactory('TestERC721');
   let testERC721 = await TestERC721.connect(deployer).deploy(name, symbol);
   return testERC721;
+};
+
+exports.deployTestERC1155 = async (deployer, uri) => {
+  let TestERC1155 = await ethers.getContractFactory('TestERC1155');
+  let testERC1155 = await TestERC1155.connect(deployer).deploy(uri);
+  return testERC1155;
+};
+
+exports.deployTestERC20 = async (deployer, name, symbol) => {
+  let TestERC20 = await ethers.getContractFactory('TestERC20');
+  let testERC20 = await TestERC20.connect(deployer).deploy(name, symbol);
+  return testERC20;
 };

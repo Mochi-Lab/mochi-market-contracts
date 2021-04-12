@@ -2,92 +2,117 @@
 
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
+const { expectRevert } = require('@openzeppelin/test-helpers');
 const {
   deployAddressesProvider,
   allSetup,
   deployTestERC721,
+  deployTestERC1155,
 } = require('../helpers');
 const { ERRORS } = require('../constans');
 
-describe('NFTList', async () => {
-  let addressesProvider, nftListProxy;
-  let deployer, marketAdmin, user;
+describe('NFTList Contract', async () => {
+  let addressesProvider, nftList;
+  let deployer, marketAdmin, alice;
+  let nftERC721, nftERC1155;
 
   beforeEach(async () => {
-    [deployer, marketAdmin, user] = await ethers.getSigners();
+    [deployer, marketAdmin, alice] = await ethers.getSigners();
 
     addressesProvider = await deployAddressesProvider(deployer);
 
-    let result = await allSetup(
-      deployer,
-      addressesProvider,
-      deployer,
-      marketAdmin
-    );
-    addressesProvider = result.addressesProvider;
-    nftListProxy = result.nftListProxy;
+    let modules = await allSetup(deployer, addressesProvider, deployer, marketAdmin);
+    addressesProvider = modules.addressesProvider;
+    nftList = modules.nftListProxy;
+
+    nftERC721 = await deployTestERC721(alice, 'TestERC721', 'TestERC721');
+    nftERC1155 = await deployTestERC1155(alice, 'TestERC1155');
   });
 
-  it('All setup successfully', async () => {
-    expect(await nftListProxy.addressesProvider()).to.equal(
-      addressesProvider.address
-    );
-    expect(await addressesProvider.getNFTList()).to.equal(nftListProxy.address);
+  it('All deploy successfully', async () => {
+    expect(await nftList.addressesProvider()).to.equal(addressesProvider.address);
+    expect(await addressesProvider.getNFTList()).to.equal(nftList.address);
     expect(await addressesProvider.getAdmin()).to.equal(marketAdmin.address);
   });
 
-  context('User register NFT first time with valid address', async () => {
-    let testERC721;
+  it('Alice registers NFT fail because submits not correct type', async () => {
+    await expectRevert.unspecified(nftList.connect(alice).registerNFT(nftERC721.address, true));
+    await expectRevert.unspecified(nftList.connect(alice).registerNFT(nftERC1155.address, false));
+  });
+
+  describe('Alice registers NFT and Admin accepts it', async () => {
     beforeEach(async () => {
-      testERC721 = await deployTestERC721(user, 'TestERC721', 'TestERC721');
-      await nftListProxy.connect(user).registerNFT(testERC721.address, false);
+      await nftList.connect(alice).registerNFT(nftERC721.address, false);
+      await nftList.connect(alice).registerNFT(nftERC1155.address, true);
     });
 
-    it('User register NFT first time successfully', async () => {
-      let data = await nftListProxy.getNFTInfor(testERC721.address);
+    it('Alice registers NFT successfully', async () => {
+      let nftERC721Info = await nftList.getNFTInfo(nftERC721.address);
+      let nftERC1155Info = await nftList.getNFTInfo(nftERC1155.address);
 
-      expect(data.isRegistered).to.equal(true);
-      expect(data.isAccepted).to.equal(false);
-      expect(await nftListProxy.getNFTCount()).to.equal('1');
+      expect(nftERC721Info.isRegistered).to.equal(true);
+      expect(nftERC721Info.isAccepted).to.equal(false);
+      expect(nftERC721Info.isERC1155).to.equal(false);
+
+      expect(nftERC1155Info.isRegistered).to.be.equal(true);
+      expect(nftERC1155Info.isAccepted).to.be.equal(false);
+      expect(nftERC1155Info.isERC1155).to.equal(true);
+
+      expect(await nftList.getNFTCount()).to.equal('2');
+      expect(await nftList.getAllNFTAddress()).to.be.include(nftERC721.address);
+      expect(await nftList.getAllNFTAddress()).to.be.include(nftERC1155.address);
     });
 
-    it('User register NFT second time fail with registered address', async () => {
+    it('Alice registers NFT fail with a registered address', async () => {
+      await expect(nftList.connect(alice).registerNFT(nftERC721.address, false)).to.be.revertedWith(
+        ERRORS.NFT_ALREADY_REGISTERED
+      );
+
       await expect(
-        nftListProxy.connect(user).registerNFT(testERC721.address, false)
+        nftList.connect(alice).registerNFT(nftERC1155.address, false)
       ).to.be.revertedWith(ERRORS.NFT_ALREADY_REGISTERED);
     });
 
-    it('Only admin can accept nft', async () => {
-      await expect(
-        nftListProxy.connect(user).acceptNFT(testERC721.address)
-      ).to.be.revertedWith(ERRORS.CALLER_NOT_MARKET_ADMIN);
+    it('Only Admin can accept NFT', async () => {
+      await expect(nftList.connect(alice).acceptNFT(nftERC721.address)).to.be.revertedWith(
+        ERRORS.CALLER_NOT_MARKET_ADMIN
+      );
+
+      await expect(nftList.connect(alice).acceptNFT(nftERC1155.address)).to.be.revertedWith(
+        ERRORS.CALLER_NOT_MARKET_ADMIN
+      );
     });
 
-    it('Accept fail with a unregistered nft', async () => {
-      let testERC721_2 = await deployTestERC721(
-        user,
-        'TestERC721_2',
-        'TestERC721_2'
-      );
+    it('Admin accepts fail with an unregistered NFT', async () => {
+      let anotherNFTERC721 = await deployTestERC721(alice, 'TestERC721_2', 'TestERC721_2');
       await expect(
-        nftListProxy.connect(marketAdmin).acceptNFT(testERC721_2.address)
+        nftList.connect(marketAdmin).acceptNFT(anotherNFTERC721.address)
       ).to.be.revertedWith(ERRORS.NFT_NOT_REGISTERED);
     });
 
-    it('Accept successfully', async () => {
-      await nftListProxy.connect(marketAdmin).acceptNFT(testERC721.address);
-      let data = await nftListProxy.getNFTInfor(testERC721.address);
-      expect(data.isAccepted).to.equal(true);
-      expect(await nftListProxy.getAcceptedNFTs()).to.include(
-        testERC721.address
-      );
+    it('Admin accepts successfully', async () => {
+      await nftList.connect(marketAdmin).acceptNFT(nftERC721.address);
+      await nftList.connect(marketAdmin).acceptNFT(nftERC1155.address);
+
+      let nftERC721Info = await nftList.getNFTInfo(nftERC721.address);
+      let nftERC1155Info = await nftList.getNFTInfo(nftERC1155.address);
+
+      expect(nftERC721Info.isAccepted).to.equal(true);
+      expect(nftERC1155Info.isAccepted).to.equal(true);
+      expect(await nftList.getAcceptedNFTs()).to.include(nftERC721.address);
+      expect(await nftList.getAcceptedNFTs()).to.include(nftERC1155.address);
     });
 
-    it('Accept fail with accepted nft', async () => {
-      await nftListProxy.connect(marketAdmin).acceptNFT(testERC721.address);
-      await expect(
-        nftListProxy.connect(marketAdmin).acceptNFT(testERC721.address)
-      ).to.be.revertedWith(ERRORS.NFT_ALREADY_ACCEPTED);
+    it('Admin accepts fail with an accepted NFT', async () => {
+      await nftList.connect(marketAdmin).acceptNFT(nftERC721.address);
+      await nftList.connect(marketAdmin).acceptNFT(nftERC1155.address);
+
+      await expect(nftList.connect(marketAdmin).acceptNFT(nftERC721.address)).to.be.revertedWith(
+        ERRORS.NFT_ALREADY_ACCEPTED
+      );
+      await expect(nftList.connect(marketAdmin).acceptNFT(nftERC1155.address)).to.be.revertedWith(
+        ERRORS.NFT_ALREADY_ACCEPTED
+      );
     });
   });
 });

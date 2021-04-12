@@ -145,7 +145,7 @@ contract NFTList is Initializable {
      * @param nftAddress The address of nft
      * @return The information of nft
      **/
-    function getNFTInfor(address nftAddress) external view returns (DataTypes.NFTInfo memory) {
+    function getNFTInfo(address nftAddress) external view returns (DataTypes.NFTInfo memory) {
         return _nftToInfo[nftAddress];
     }
 
@@ -176,5 +176,18 @@ contract NFTList is Initializable {
      */
     function isAcceptedNFT(address nftAddress) external view returns (bool) {
         return _nftToInfo[nftAddress].isAccepted;
+    }
+
+    function getAllNFT() external view returns (DataTypes.NFTInfo[] memory) {
+        DataTypes.NFTInfo[] memory result = new DataTypes.NFTInfo[](_nftsList.length);
+        for (uint256 i = 0; i < _nftsList.length; i++) {
+            result[i] = _nftToInfo[_nftsList[i]];
+        }
+
+        return result;
+    }
+
+    function getAllNFTAddress() external view returns (address[] memory) {
+        return _nftsList;
     }
 }

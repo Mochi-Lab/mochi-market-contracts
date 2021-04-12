@@ -16,7 +16,11 @@ library Errors {
     string public constant REWARD_ALREADY_SET = "Reward already set"; // 'The caller must be contract owner'
 
     string public constant INVALID_START_TIME = "Invalid start time"; // 'Invalid start time'
-    string public constant PERIOD_MUST_BE_GREATER_THAN_ZERO = "Period must be greater than zero"; // 'Invalid start time'
+    string public constant PERIOD_MUST_BE_GREATER_THAN_ZERO = "Period must be greater than zero"; // 'Period must be greater than zero"'
+    string public constant NUMBER_OF_CYCLE_MUST_BE_GREATER_THAN_ZERO =
+        "Number of cycle must be greater than zero"; // 'Number of cycle must be greater than zero'
+    string public constant FIRST_RATE_MUST_BE_GREATER_THAN_ZERO =
+        "First rate must be greater than zero"; // 'First rate must be greater than zero'
 
     string public constant SUPPLY_IS_NOT_AVAILABLE = "Supply is not available"; // 'Invalid start time'
 
