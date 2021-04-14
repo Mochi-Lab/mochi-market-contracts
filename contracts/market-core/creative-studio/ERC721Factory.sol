@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.6.12;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
 import "./SampleERC721.sol";
 
@@ -9,7 +8,7 @@ import "./SampleERC721.sol";
  * @author MochiLab
  **/
 contract ERC721Factory {
-    constructor() public {}
+    constructor() {}
 
     /**
      * @dev Deploy a new ERC721 contract

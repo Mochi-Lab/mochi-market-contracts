@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.6.12;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC1155/ERC1155Receiver.sol";
+// import "@openzeppelin/contracts/token/ERC1155/ERC1155Receiver.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -12,16 +10,14 @@ import "./WrappedERC1155.sol";
 import "./RootRouter.sol";
 import "../factory/interfaces/IFactory.sol";
 
-contract ERC1155_ETH_Router is ERC1155Receiver {
-    using SafeMath for uint256;
-
+contract ERC1155_ETH_Router {
     RootRouter public rootRouter;
     IFactory public factory;
     address public WETH;
 
     string public constant PARAMETERS_NOT_MATCH = "Parameters are not match";
 
-    constructor(address payable _router) public {
+    constructor(address payable _router) {
         rootRouter = RootRouter(_router);
         factory = IFactory(rootRouter.factory());
         WETH = rootRouter.WETH();
@@ -140,8 +136,8 @@ contract ERC1155_ETH_Router is ERC1155Receiver {
 
         (amountToken, amountETH, liquidity) = rootRouter.addLiquidityETH{value: info.amountETHMin}(
             address(wrappedToken),
-            info.amountTokenDesired.mul(wrappedToken.unit()),
-            info.amountTokenMin.mul(wrappedToken.unit()),
+            info.amountTokenDesired * wrappedToken.unit(),
+            info.amountTokenMin * wrappedToken.unit(),
             info.amountETHMin,
             info.to,
             info.deadline
@@ -188,7 +184,7 @@ contract ERC1155_ETH_Router is ERC1155Receiver {
         (amountToken, amountETH) = rootRouter.removeLiquidityETH(
             address(wrappedToken),
             info.liquidity,
-            info.amountTokenMin.mul(wrappedToken.unit()),
+            info.amountTokenMin * wrappedToken.unit(),
             info.amountETHMin,
             address(this),
             info.deadline
@@ -227,8 +223,7 @@ contract ERC1155_ETH_Router is ERC1155Receiver {
         for (uint256 i = 0; i < info.erc1155Addresses.length; i++) {
             path[i + 1] = factory.getWrappedERC1155(info.erc1155Addresses[i], info.tokenIds[i]);
         }
-        uint256 realAmountOutMin =
-            info.amountOutMin.mul(WrappedERC1155(path[path.length - 1]).unit());
+        uint256 realAmountOutMin = info.amountOutMin * WrappedERC1155(path[path.length - 1]).unit();
 
         amounts = rootRouter.swapExactETHForTokens{value: msg.value}(
             realAmountOutMin,
@@ -323,7 +318,7 @@ contract ERC1155_ETH_Router is ERC1155Receiver {
             path[i + 1] = factory.getWrappedERC1155(info.erc1155Addresses[i], info.tokenIds[i]);
         }
 
-        uint256 realAmountOut = info.amountOut.mul(WrappedERC1155(path[path.length - 1]).unit());
+        uint256 realAmountOut = info.amountOut * WrappedERC1155(path[path.length - 1]).unit();
         amounts = rootRouter.swapETHForExactTokens{value: msg.value}(
             realAmountOut,
             path,
@@ -373,10 +368,10 @@ contract ERC1155_ETH_Router is ERC1155Receiver {
         amounts = rootRouter.getAmountsIn(info.amountOut, path);
 
         uint256 amountNFT = 0;
-        if (amounts[0].mod(WrappedERC1155(path[0]).unit()) > 0) {
-            amountNFT = (amounts[0].div(WrappedERC1155(path[0]).unit())).add(1);
+        if (amounts[0] % WrappedERC1155(path[0]).unit() > 0) {
+            amountNFT = (amounts[0] / WrappedERC1155(path[0]).unit()) + 1;
         } else {
-            amountNFT = amounts[0].div(WrappedERC1155(path[0]).unit());
+            amountNFT = amounts[0] / WrappedERC1155(path[0]).unit();
         }
 
         require(amountNFT <= info.amountInMax, "Router: EXCESSIVE_INPUT_AMOUNT");
@@ -397,7 +392,7 @@ contract ERC1155_ETH_Router is ERC1155Receiver {
             info.to,
             info.deadline
         );
-        WrappedERC1155(path[0]).transfer(msg.sender, amountWrappedToken.sub(amounts[0]));
+        WrappedERC1155(path[0]).transfer(msg.sender, amountWrappedToken - amounts[0]);
     }
 
     function _redeemAndApprove(address pair, uint256 liquidity) internal {
@@ -411,8 +406,8 @@ contract ERC1155_ETH_Router is ERC1155Receiver {
         uint256 amountToken,
         bytes memory data
     ) internal {
-        uint256 amountNFT = amountToken.div(wrappedToken.unit());
-        uint256 tokenLeft = amountToken.sub(amountNFT.mul(wrappedToken.unit()));
+        uint256 amountNFT = amountToken / wrappedToken.unit();
+        uint256 tokenLeft = amountToken - (amountNFT * wrappedToken.unit());
 
         if (tokenLeft != 0) {
             TransferHelper.safeTransfer(address(wrappedToken), to, tokenLeft);
@@ -431,7 +426,7 @@ contract ERC1155_ETH_Router is ERC1155Receiver {
             wrappedToken = factory.getWrappedERC1155(erc1155Address, tokenId);
         }
 
-        WrappedERC1155(wrappedToken).approve(address(rootRouter), uint256(-1));
+        WrappedERC1155(wrappedToken).approve(address(rootRouter), type(uint256).max);
 
         if (IERC1155(erc1155Address).isApprovedForAll(address(this), wrappedToken) == false) {
             IERC1155(erc1155Address).setApprovalForAll(wrappedToken, true);
@@ -444,7 +439,7 @@ contract ERC1155_ETH_Router is ERC1155Receiver {
         uint256 id,
         uint256 value,
         bytes calldata data
-    ) external override returns (bytes4) {
+    ) external returns (bytes4) {
         return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
     }
 
@@ -454,7 +449,7 @@ contract ERC1155_ETH_Router is ERC1155Receiver {
         uint256[] calldata ids,
         uint256[] calldata values,
         bytes calldata data
-    ) external override returns (bytes4) {
+    ) external returns (bytes4) {
         return
             bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"));
     }

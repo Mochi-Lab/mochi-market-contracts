@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.6.12;
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract TestERC1155 is ERC1155, Ownable {
-    constructor(string memory uri_) public ERC1155(uri_) {}
+    constructor(string memory uri_) ERC1155(uri_) {}
 
     function mint(
         address account_,

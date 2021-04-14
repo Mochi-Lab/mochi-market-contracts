@@ -1,21 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.6.12;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/proxy/Initializable.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
-import "../libraries/helpers/Errors.sol";
-import "../libraries/types/DataTypes.sol";
-import "../interfaces/IAddressesProvider.sol";
-import "../interfaces/INFTList.sol";
-import "../interfaces/ISellOrderList.sol";
+import "../libraries/helpers/MarketErrors.sol";
 import "../interfaces/IVault.sol";
 import "../interfaces/IExchangeOrderList.sol";
+import "../interfaces/ISellOrderList.sol";
+
+import "../interfaces/mini-interfaces/MiniINFTList.sol";
+import "../interfaces/mini-interfaces/MiniIAddressesProvider.sol";
 
 /**
  * @title Market contract
@@ -23,25 +21,25 @@ import "../interfaces/IExchangeOrderList.sol";
  * @author MochiLab
  **/
 contract Market is Initializable, ReentrancyGuard {
-    using SafeMath for uint256;
-
     uint256 public constant SAFE_NUMBER = 1e12;
-    IAddressesProvider public addressesProvider;
-    INFTList public nftList;
+    MiniIAddressesProvider public addressesProvider;
+    MiniINFTList public nftList;
     ISellOrderList public sellOrderList;
     IVault public vault;
     IExchangeOrderList public exchangeOrderList;
+    address public moma;
 
     mapping(address => bool) public acceptedToken;
-    uint256 internal _feeNumerator;
-    uint256 internal _feeDenominator;
+    uint256 internal _regularFeeNumerator;
+    uint256 internal _regularFeeDenominator;
+    uint256 internal _momaFeeNumerator;
+    uint256 internal _momaFeeDenominator;
 
-    event Initialized(address indexed provider, uint256 numerator, uint256 denominator);
-
-    event FeeUpdated(uint256 numerator, uint256 denominator);
+    event RegularFeeUpdated(uint256 numerator, uint256 denominator);
+    event MOMAFeeUpdated(uint256 numerator, uint256 denominator);
 
     modifier onlyMarketAdmin() {
-        require(addressesProvider.getAdmin() == msg.sender, Errors.CALLER_NOT_MARKET_ADMIN);
+        require(addressesProvider.getAdmin() == msg.sender, MarketErrors.CALLER_NOT_MARKET_ADMIN);
         _;
     }
 
@@ -51,24 +49,35 @@ contract Market is Initializable, ReentrancyGuard {
      * - Caching the address of the AddressesProvider in order to reduce gas consumption
      *   on subsequent operations
      * @param provider The address of AddressesProvider
-     * @param numerator The fee numerator
-     * @param denominator The fee denominator
+     * @param regularFeeNumerator The fee numerator
+     * @param regularFeeDenominator The fee denominator
      **/
     function initialize(
         address provider,
-        uint256 numerator,
-        uint256 denominator
+        address momaToken,
+        uint256 momaFeeNumerator,
+        uint256 momaFeeDenominator,
+        uint256 regularFeeNumerator,
+        uint256 regularFeeDenominator
     ) external initializer {
-        require(denominator >= numerator, Errors.DEMONINATOR_NOT_GREATER_THAN_NUMERATOR);
-        addressesProvider = IAddressesProvider(provider);
-        nftList = INFTList(addressesProvider.getNFTList());
+        require(
+            momaFeeDenominator >= momaFeeNumerator && regularFeeDenominator >= regularFeeNumerator,
+            MarketErrors.DEMONINATOR_NOT_GREATER_THAN_NUMERATOR
+        );
+        addressesProvider = MiniIAddressesProvider(provider);
+        nftList = MiniINFTList(addressesProvider.getNFTList());
         sellOrderList = ISellOrderList(addressesProvider.getSellOrderList());
         exchangeOrderList = IExchangeOrderList(addressesProvider.getExchangeOrderList());
         vault = IVault(addressesProvider.getVault());
-        _feeNumerator = numerator;
-        _feeDenominator = denominator;
+
+        moma = momaToken;
+        _momaFeeNumerator = momaFeeNumerator;
+        _momaFeeDenominator = momaFeeDenominator;
+        _regularFeeNumerator = regularFeeNumerator;
+        _regularFeeDenominator = regularFeeDenominator;
+
         acceptedToken[address(0)] = true;
-        emit Initialized(provider, numerator, denominator);
+        acceptedToken[moma] = true;
     }
 
     /**
@@ -77,8 +86,8 @@ contract Market is Initializable, ReentrancyGuard {
      * @param token Token address
      **/
     function acceptToken(address token) external onlyMarketAdmin {
-        require(acceptedToken[token] == false, Errors.TOKEN_ALREADY_ACCEPTED);
-        IERC20(token).approve(address(vault), uint256(-1));
+        require(acceptedToken[token] == false, MarketErrors.TOKEN_ALREADY_ACCEPTED);
+        IERC20(token).approve(address(vault), type(uint256).max);
         vault.setupRewardToken(token);
         acceptedToken[token] = true;
     }
@@ -89,8 +98,10 @@ contract Market is Initializable, ReentrancyGuard {
      * @param token Token address
      **/
     function revokeToken(address token) external onlyMarketAdmin {
-        require(acceptedToken[token] == true, Errors.TOKEN_ALREADY_REVOKED);
-        IERC20(token).approve(address(vault), 0);
+        require(acceptedToken[token] == true, MarketErrors.TOKEN_ALREADY_REVOKED);
+        if (token != address(0)) {
+            IERC20(token).approve(address(vault), 0);
+        }
         acceptedToken[token] = false;
     }
 
@@ -100,11 +111,24 @@ contract Market is Initializable, ReentrancyGuard {
      * @param numerator The fee numerator
      * @param denominator The fee denominator
      **/
-    function updateFee(uint256 numerator, uint256 denominator) external onlyMarketAdmin {
-        require(denominator >= numerator, Errors.DEMONINATOR_NOT_GREATER_THAN_NUMERATOR);
-        _feeNumerator = numerator;
-        _feeDenominator = denominator;
-        emit FeeUpdated(numerator, denominator);
+    function updateRegularFee(uint256 numerator, uint256 denominator) external onlyMarketAdmin {
+        require(denominator >= numerator, MarketErrors.DEMONINATOR_NOT_GREATER_THAN_NUMERATOR);
+        _regularFeeNumerator = numerator;
+        _regularFeeDenominator = denominator;
+        emit RegularFeeUpdated(numerator, denominator);
+    }
+
+    /**
+     * @dev Update fee for transactions
+     * - Can only be called by market admin
+     * @param numerator The fee numerator
+     * @param denominator The fee denominator
+     **/
+    function updateMomaFee(uint256 numerator, uint256 denominator) external onlyMarketAdmin {
+        require(denominator >= numerator, MarketErrors.DEMONINATOR_NOT_GREATER_THAN_NUMERATOR);
+        _momaFeeNumerator = numerator;
+        _momaFeeDenominator = denominator;
+        emit MOMAFeeUpdated(numerator, denominator);
     }
 
     /**
@@ -123,40 +147,40 @@ contract Market is Initializable, ReentrancyGuard {
         uint256 price,
         address token
     ) external nonReentrant {
-        require(nftList.isAcceptedNFT(nftAddress), Errors.NFT_NOT_ACCEPTED);
-        require(price > 0, Errors.PRICE_IS_ZERO);
-        require(acceptedToken[token] == true, Errors.TOKEN_NOT_ACCEPTED);
+        require(nftList.isAcceptedNFT(nftAddress), MarketErrors.NFT_NOT_ACCEPTED);
+        require(price > 0, MarketErrors.PRICE_IS_ZERO);
+        require(acceptedToken[token] == true, MarketErrors.TOKEN_NOT_ACCEPTED);
 
         if (nftList.isERC1155(nftAddress) == true) {
-            require(amount > 0, Errors.AMOUNT_IS_ZERO);
+            require(amount > 0, MarketErrors.AMOUNT_IS_ZERO);
             require(
                 IERC1155(nftAddress).balanceOf(msg.sender, tokenId) >= amount,
-                Errors.INSUFFICIENT_BALANCE
+                MarketErrors.INSUFFICIENT_BALANCE
             );
             require(
                 IERC1155(nftAddress).isApprovedForAll(msg.sender, address(this)),
-                Errors.NFT_NOT_APPROVED_FOR_MARKET
+                MarketErrors.NFT_NOT_APPROVED_FOR_MARKET
             );
             require(
-                !sellOrderList.checkDuplicate_ERC1155(nftAddress, tokenId, msg.sender),
-                Errors.SELL_ORDER_DUPLICATE
+                !sellOrderList.checkDuplicateERC1155(nftAddress, tokenId, msg.sender),
+                MarketErrors.SELL_ORDER_DUPLICATE
             );
         } else {
-            require(amount == 1, Errors.AMOUNT_IS_NOT_EQUAL_ONE);
+            require(amount == 1, MarketErrors.AMOUNT_IS_NOT_EQUAL_ONE);
             require(
                 IERC721(nftAddress).ownerOf(tokenId) == msg.sender,
-                Errors.CALLER_NOT_NFT_OWNER
+                MarketErrors.CALLER_NOT_NFT_OWNER
             );
             require(
-                IERC721(nftAddress).getApproved(tokenId) == address(this),
-                Errors.NFT_NOT_APPROVED_FOR_MARKET
+                IERC721(nftAddress).isApprovedForAll(msg.sender, address(this)),
+                MarketErrors.NFT_NOT_APPROVED_FOR_MARKET
             );
             require(
-                !sellOrderList.checkDuplicate_ERC721(nftAddress, tokenId, msg.sender),
-                Errors.SELL_ORDER_DUPLICATE
+                !sellOrderList.checkDuplicateERC721(nftAddress, tokenId, msg.sender),
+                MarketErrors.SELL_ORDER_DUPLICATE
             );
         }
-        sellOrderList.addSellOrder(nftAddress, tokenId, amount, msg.sender, price, token);
+        sellOrderList.addSellOrder(nftAddress, tokenId, amount, payable(msg.sender), price, token);
     }
 
     /**
@@ -165,9 +189,9 @@ contract Market is Initializable, ReentrancyGuard {
      * @param sellId Sell order id
      **/
     function cancleSellOrder(uint256 sellId) external nonReentrant {
-        DataTypes.SellOrder memory sellOrder = sellOrderList.getSellOrderById(sellId);
-        require(sellOrder.seller == msg.sender, Errors.CALLER_NOT_SELLER);
-        require(sellOrder.isActive == true, Errors.SELL_ORDER_NOT_ACTIVE);
+        SellOrderType.SellOrder memory sellOrder = sellOrderList.getSellOrderById(sellId);
+        require(sellOrder.seller == msg.sender, MarketErrors.CALLER_NOT_SELLER);
+        require(sellOrder.isActive == true, MarketErrors.SELL_ORDER_NOT_ACTIVE);
         sellOrderList.deactiveSellOrder(sellId);
     }
 
@@ -183,19 +207,22 @@ contract Market is Initializable, ReentrancyGuard {
         address receiver,
         bytes calldata data
     ) external payable nonReentrant {
-        DataTypes.SellOrder memory sellOrder = sellOrderList.getSellOrderById(sellId);
+        SellOrderType.SellOrder memory sellOrder = sellOrderList.getSellOrderById(sellId);
 
-        require(sellOrder.seller != msg.sender, Errors.CALLER_IS_SELLER);
-        require(sellOrder.isActive == true, Errors.SELL_ORDER_NOT_ACTIVE);
+        require(sellOrder.seller != msg.sender, MarketErrors.CALLER_IS_SELLER);
+        require(sellOrder.isActive == true, MarketErrors.SELL_ORDER_NOT_ACTIVE);
 
-        require(amount > 0, Errors.AMOUNT_IS_ZERO);
-        require(amount <= sellOrder.amount.sub(sellOrder.soldAmount), Errors.AMOUNT_IS_NOT_ENOUGH);
-        uint256 price = amount.mul(sellOrder.price);
-        uint256 fee = _calculateFee(price);
+        require(amount > 0, MarketErrors.AMOUNT_IS_ZERO);
+        require(
+            amount <= sellOrder.amount - sellOrder.soldAmount,
+            MarketErrors.AMOUNT_IS_NOT_ENOUGH
+        );
+        uint256 price = amount * sellOrder.price;
+        uint256 fee = _calculateFee(sellOrder.token, price);
 
         if (sellOrder.token == address(0)) {
-            require(msg.value == price, Errors.VALUE_NOT_EQUAL_PRICE);
-            sellOrder.seller.transfer(price.sub(fee));
+            require(msg.value == price, MarketErrors.VALUE_NOT_EQUAL_PRICE);
+            sellOrder.seller.transfer(price - fee);
             if (fee > 0) {
                 vault.deposit{value: fee}(
                     sellOrder.nftAddress,
@@ -207,7 +234,7 @@ contract Market is Initializable, ReentrancyGuard {
             }
         } else {
             IERC20(sellOrder.token).transferFrom(msg.sender, address(this), price);
-            IERC20(sellOrder.token).transfer(sellOrder.seller, price.sub(fee));
+            IERC20(sellOrder.token).transfer(sellOrder.seller, price - fee);
             if (fee > 0) {
                 vault.deposit(
                     sellOrder.nftAddress,
@@ -231,7 +258,8 @@ contract Market is Initializable, ReentrancyGuard {
             IERC721(sellOrder.nftAddress).safeTransferFrom(
                 sellOrder.seller,
                 receiver,
-                sellOrder.tokenId
+                sellOrder.tokenId,
+                data
             );
         }
 
@@ -245,10 +273,10 @@ contract Market is Initializable, ReentrancyGuard {
      * @param newPrice The new price of sell order
      **/
     function updatePrice(uint256 id, uint256 newPrice) external nonReentrant {
-        DataTypes.SellOrder memory sellOrder = sellOrderList.getSellOrderById(id);
-        require(sellOrder.seller == msg.sender, Errors.CALLER_NOT_SELLER);
-        require(sellOrder.isActive == true, Errors.SELL_ORDER_NOT_ACTIVE);
-        require(sellOrder.price != newPrice, Errors.PRICE_NOT_CHANGE);
+        SellOrderType.SellOrder memory sellOrder = sellOrderList.getSellOrderById(id);
+        require(sellOrder.seller == msg.sender, MarketErrors.CALLER_NOT_SELLER);
+        require(sellOrder.isActive == true, MarketErrors.SELL_ORDER_NOT_ACTIVE);
+        require(sellOrder.price != newPrice, MarketErrors.PRICE_NOT_CHANGE);
 
         sellOrderList.updatePrice(id, newPrice);
     }
@@ -279,48 +307,48 @@ contract Market is Initializable, ReentrancyGuard {
                 nftAmounts.length == tokens.length &&
                 tokens.length == prices.length &&
                 prices.length == data.length,
-            Errors.PARAMETERS_NOT_MATCH
+            MarketErrors.PARAMETERS_NOT_MATCH
         );
-        require(msg.sender == users[0], Errors.PARAMETERS_NOT_MATCH);
+        require(msg.sender == users[0], MarketErrors.PARAMETERS_NOT_MATCH);
 
-        require(data[0].length == 0, Errors.INVALID_CALLDATA);
+        require(data[0].length == 0, MarketErrors.INVALID_CALLDATA);
 
         for (uint256 i = 0; i < nftAddresses.length; i++) {
-            require(nftList.isAcceptedNFT(nftAddresses[i]), Errors.NFT_NOT_ACCEPTED);
+            require(nftList.isAcceptedNFT(nftAddresses[i]), MarketErrors.NFT_NOT_ACCEPTED);
             if (nftList.isERC1155(nftAddresses[i]) == true) {
-                require(nftAmounts[i] > 0, Errors.AMOUNT_IS_ZERO);
+                require(nftAmounts[i] > 0, MarketErrors.AMOUNT_IS_ZERO);
             } else {
-                require(nftAmounts[i] == 1, Errors.AMOUNT_IS_NOT_EQUAL_ONE);
+                require(nftAmounts[i] == 1, MarketErrors.AMOUNT_IS_NOT_EQUAL_ONE);
             }
             if (i > 0 && prices[i] > 0) {
-                require(acceptedToken[tokens[i]] == true, Errors.TOKEN_NOT_ACCEPTED);
+                require(acceptedToken[tokens[i]] == true, MarketErrors.TOKEN_NOT_ACCEPTED);
             }
         }
         if (nftList.isERC1155(nftAddresses[0]) == true) {
             require(
                 IERC1155(nftAddresses[0]).balanceOf(msg.sender, tokenIds[0]) >= nftAmounts[0],
-                Errors.INSUFFICIENT_BALANCE
+                MarketErrors.INSUFFICIENT_BALANCE
             );
             require(
                 IERC1155(nftAddresses[0]).isApprovedForAll(msg.sender, address(this)),
-                Errors.NFT_NOT_APPROVED_FOR_MARKET
+                MarketErrors.NFT_NOT_APPROVED_FOR_MARKET
             );
             require(
-                !exchangeOrderList.checkDuplicate_ERC1155(nftAddresses[0], tokenIds[0], msg.sender),
-                Errors.EXCHANGE_ORDER_DUPLICATE
+                !exchangeOrderList.checkDuplicateERC1155(nftAddresses[0], tokenIds[0], msg.sender),
+                MarketErrors.EXCHANGE_ORDER_DUPLICATE
             );
         } else {
             require(
                 IERC721(nftAddresses[0]).ownerOf(tokenIds[0]) == msg.sender,
-                Errors.CALLER_NOT_NFT_OWNER
+                MarketErrors.CALLER_NOT_NFT_OWNER
             );
             require(
                 IERC721(nftAddresses[0]).getApproved(tokenIds[0]) == address(this),
-                Errors.NFT_NOT_APPROVED_FOR_MARKET
+                MarketErrors.NFT_NOT_APPROVED_FOR_MARKET
             );
             require(
-                !exchangeOrderList.checkDuplicate_ERC721(nftAddresses[0], tokenIds[0], msg.sender),
-                Errors.EXCHANGE_ORDER_DUPLICATE
+                !exchangeOrderList.checkDuplicateERC721(nftAddresses[0], tokenIds[0], msg.sender),
+                MarketErrors.EXCHANGE_ORDER_DUPLICATE
             );
         }
 
@@ -341,10 +369,10 @@ contract Market is Initializable, ReentrancyGuard {
      * @param exchangeId Exchange order id
      **/
     function cancleExchangeOrder(uint256 exchangeId) external nonReentrant {
-        DataTypes.ExchangeOrder memory exchangeOrder =
+        ExchangeOrderType.ExchangeOrder memory exchangeOrder =
             exchangeOrderList.getExchangeOrderById(exchangeId);
-        require(exchangeOrder.users[0] == msg.sender, Errors.CALLER_NOT_SELLER);
-        require(exchangeOrder.isActive == true, Errors.SELL_ORDER_NOT_ACTIVE);
+        require(exchangeOrder.users[0] == msg.sender, MarketErrors.CALLER_NOT_SELLER);
+        require(exchangeOrder.isActive == true, MarketErrors.SELL_ORDER_NOT_ACTIVE);
         exchangeOrderList.deactiveExchangeOrder(exchangeId);
     }
 
@@ -360,13 +388,13 @@ contract Market is Initializable, ReentrancyGuard {
         address receiver,
         bytes memory data
     ) external payable nonReentrant {
-        DataTypes.ExchangeOrder memory exchangeOrder =
+        ExchangeOrderType.ExchangeOrder memory exchangeOrder =
             exchangeOrderList.getExchangeOrderById(exchangeId);
-        require(exchangeOrder.users[0] != msg.sender, Errors.CALLER_IS_SELLER);
-        require(exchangeOrder.isActive == true, Errors.SELL_ORDER_NOT_ACTIVE);
+        require(exchangeOrder.users[0] != msg.sender, MarketErrors.CALLER_IS_SELLER);
+        require(exchangeOrder.isActive == true, MarketErrors.SELL_ORDER_NOT_ACTIVE);
         require(
             destinationId > 0 && destinationId < exchangeOrder.nftAddresses.length,
-            Errors.INVALID_DESTINATION
+            MarketErrors.INVALID_DESTINATION
         );
         if (nftList.isERC1155(exchangeOrder.nftAddresses[destinationId]) == true) {
             require(
@@ -374,14 +402,14 @@ contract Market is Initializable, ReentrancyGuard {
                     msg.sender,
                     exchangeOrder.tokenIds[destinationId]
                 ) >= exchangeOrder.nftAmounts[destinationId],
-                Errors.INSUFFICIENT_BALANCE
+                MarketErrors.INSUFFICIENT_BALANCE
             );
             require(
                 IERC1155(exchangeOrder.nftAddresses[destinationId]).isApprovedForAll(
                     msg.sender,
                     address(this)
                 ),
-                Errors.NFT_NOT_APPROVED_FOR_MARKET
+                MarketErrors.NFT_NOT_APPROVED_FOR_MARKET
             );
             IERC1155(exchangeOrder.nftAddresses[destinationId]).safeTransferFrom(
                 msg.sender,
@@ -395,13 +423,13 @@ contract Market is Initializable, ReentrancyGuard {
                 IERC721(exchangeOrder.nftAddresses[destinationId]).getApproved(
                     exchangeOrder.tokenIds[destinationId]
                 ) == address(this),
-                Errors.NFT_NOT_APPROVED_FOR_MARKET
+                MarketErrors.NFT_NOT_APPROVED_FOR_MARKET
             );
             require(
                 IERC721(exchangeOrder.nftAddresses[destinationId]).ownerOf(
                     exchangeOrder.tokenIds[destinationId]
                 ) == msg.sender,
-                Errors.CALLER_NOT_NFT_OWNER
+                MarketErrors.CALLER_NOT_NFT_OWNER
             );
             IERC721(exchangeOrder.nftAddresses[destinationId]).safeTransferFrom(
                 msg.sender,
@@ -424,10 +452,14 @@ contract Market is Initializable, ReentrancyGuard {
                 exchangeOrder.tokenIds[0]
             );
         }
-        uint256 fee = _calculateFee(exchangeOrder.prices[destinationId]);
+        uint256 fee =
+            _calculateFee(exchangeOrder.tokens[destinationId], exchangeOrder.prices[destinationId]);
         if (exchangeOrder.tokens[destinationId] == address(0)) {
-            require(msg.value == exchangeOrder.prices[destinationId], Errors.VALUE_NOT_EQUAL_PRICE);
-            payable(exchangeOrder.users[0]).transfer(exchangeOrder.prices[destinationId].sub(fee));
+            require(
+                msg.value == exchangeOrder.prices[destinationId],
+                MarketErrors.VALUE_NOT_EQUAL_PRICE
+            );
+            payable(exchangeOrder.users[0]).transfer(exchangeOrder.prices[destinationId] - fee);
             if (fee > 0) {
                 vault.deposit{value: fee}(
                     exchangeOrder.nftAddresses[0],
@@ -445,7 +477,7 @@ contract Market is Initializable, ReentrancyGuard {
             );
             IERC20(exchangeOrder.tokens[destinationId]).transfer(
                 exchangeOrder.users[0],
-                exchangeOrder.prices[destinationId].sub(fee)
+                exchangeOrder.prices[destinationId] - fee
             );
             if (fee > 0) {
                 vault.deposit(
@@ -461,22 +493,36 @@ contract Market is Initializable, ReentrancyGuard {
     }
 
     /**
-     * @dev Get fee
+     * @dev Get regular fee
      * - external view function
-     * @return Fee numerator and denominator
+     * @return Regular fee numerator and denominator
      **/
-    function getFee() external view returns (uint256, uint256) {
-        return (_feeNumerator, _feeDenominator);
+    function getRegularFee() external view returns (uint256, uint256) {
+        return (_regularFeeNumerator, _regularFeeDenominator);
+    }
+
+    /**
+     * @dev Get moma fee
+     * - external view function
+     * @return Moma fee numerator and denominator
+     **/
+    function getMomaFee() external view returns (uint256, uint256) {
+        return (_momaFeeNumerator, _momaFeeDenominator);
     }
 
     /**
      * @dev Calculate fee
      * - internal view function, called inside buy(), exchange() function
+     * @param token The  token address
      * @param price The price of transaction
-     * @return Fee of transaction
      **/
-    function _calculateFee(uint256 price) internal view returns (uint256) {
-        uint256 fee = ((price * SAFE_NUMBER * _feeNumerator) / _feeDenominator) / SAFE_NUMBER;
-        return fee;
+    function _calculateFee(address token, uint256 price) internal view returns (uint256 fee) {
+        if (token == moma) {
+            fee = ((price * SAFE_NUMBER * _momaFeeNumerator) / _momaFeeDenominator) / SAFE_NUMBER;
+        } else {
+            fee =
+                ((price * SAFE_NUMBER * _regularFeeNumerator) / _regularFeeDenominator) /
+                SAFE_NUMBER;
+        }
     }
 }

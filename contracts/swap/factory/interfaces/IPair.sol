@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.6.12;
+pragma solidity ^0.8.0;
 
 interface IPair {
     event Approval(address indexed owner, address indexed spender, uint256 value);

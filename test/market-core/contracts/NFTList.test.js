@@ -15,13 +15,16 @@ describe('NFTList Contract', async () => {
   let addressesProvider, nftList;
   let deployer, marketAdmin, alice;
   let nftERC721, nftERC1155;
+  let moma;
 
   beforeEach(async () => {
     [deployer, marketAdmin, alice] = await ethers.getSigners();
 
     addressesProvider = await deployAddressesProvider(deployer);
 
-    let modules = await allSetup(deployer, addressesProvider, deployer, marketAdmin);
+    moma = await deployTestERC20(deployer, 'MOchi MArket Token', 'MOMA');
+
+    let modules = await allSetup(deployer, addressesProvider, deployer, marketAdmin, moma.address);
     addressesProvider = modules.addressesProvider;
     nftList = modules.nftListProxy;
 
@@ -64,30 +67,35 @@ describe('NFTList Contract', async () => {
     });
 
     it('Alice registers NFT fail with a registered address', async () => {
-      await expect(nftList.connect(alice).registerNFT(nftERC721.address, false)).to.be.revertedWith(
+      await expectRevert(
+        nftList.connect(alice).registerNFT(nftERC721.address, false),
         ERRORS.NFT_ALREADY_REGISTERED
       );
 
-      await expect(
-        nftList.connect(alice).registerNFT(nftERC1155.address, false)
-      ).to.be.revertedWith(ERRORS.NFT_ALREADY_REGISTERED);
+      await expectRevert(
+        nftList.connect(alice).registerNFT(nftERC1155.address, false),
+        ERRORS.NFT_ALREADY_REGISTERED
+      );
     });
 
     it('Only Admin can accept NFT', async () => {
-      await expect(nftList.connect(alice).acceptNFT(nftERC721.address)).to.be.revertedWith(
+      await expectRevert(
+        nftList.connect(alice).acceptNFT(nftERC721.address),
         ERRORS.CALLER_NOT_MARKET_ADMIN
       );
 
-      await expect(nftList.connect(alice).acceptNFT(nftERC1155.address)).to.be.revertedWith(
+      await expectRevert(
+        nftList.connect(alice).acceptNFT(nftERC1155.address),
         ERRORS.CALLER_NOT_MARKET_ADMIN
       );
     });
 
     it('Admin accepts fail with an unregistered NFT', async () => {
       let anotherNFTERC721 = await deployTestERC721(alice, 'TestERC721_2', 'TestERC721_2');
-      await expect(
-        nftList.connect(marketAdmin).acceptNFT(anotherNFTERC721.address)
-      ).to.be.revertedWith(ERRORS.NFT_NOT_REGISTERED);
+      await expectRevert(
+        nftList.connect(marketAdmin).acceptNFT(anotherNFTERC721.address),
+        ERRORS.NFT_NOT_REGISTERED
+      );
     });
 
     it('Admin accepts successfully', async () => {
@@ -107,10 +115,12 @@ describe('NFTList Contract', async () => {
       await nftList.connect(marketAdmin).acceptNFT(nftERC721.address);
       await nftList.connect(marketAdmin).acceptNFT(nftERC1155.address);
 
-      await expect(nftList.connect(marketAdmin).acceptNFT(nftERC721.address)).to.be.revertedWith(
+      await expectRevert(
+        nftList.connect(marketAdmin).acceptNFT(nftERC721.address),
         ERRORS.NFT_ALREADY_ACCEPTED
       );
-      await expect(nftList.connect(marketAdmin).acceptNFT(nftERC1155.address)).to.be.revertedWith(
+      await expectRevert(
+        nftList.connect(marketAdmin).acceptNFT(nftERC1155.address),
         ERRORS.NFT_ALREADY_ACCEPTED
       );
     });

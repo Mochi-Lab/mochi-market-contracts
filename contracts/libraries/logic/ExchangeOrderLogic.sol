@@ -1,13 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.6.12;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
-import "../types/DataTypes.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import "../types/ExchangeOrderType.sol";
 
 library ExchangeOrderLogic {
-    using SafeMath for uint256;
-
     /**
      * @dev Create an exchange order object
      * @param exchangeId Id of exchange order
@@ -30,9 +26,9 @@ library ExchangeOrderLogic {
         address[] memory users,
         uint256[] memory times,
         bytes[] memory data
-    ) internal pure returns (DataTypes.ExchangeOrder memory) {
+    ) internal pure returns (ExchangeOrderType.ExchangeOrder memory) {
         return
-            DataTypes.ExchangeOrder({
+            ExchangeOrderType.ExchangeOrder({
                 exchangeId: exchangeId,
                 nftAddresses: nftAddresses,
                 tokenIds: tokenIds,
@@ -52,7 +48,9 @@ library ExchangeOrderLogic {
      * @param exchangeOrder Exchange order object
      * @param time Time
      */
-    function addTimestamp(DataTypes.ExchangeOrder storage exchangeOrder, uint256 time) internal {
+    function addTimestamp(ExchangeOrderType.ExchangeOrder storage exchangeOrder, uint256 time)
+        internal
+    {
         exchangeOrder.times.push(time);
     }
 
@@ -60,7 +58,7 @@ library ExchangeOrderLogic {
      * @dev Deactive a exchange order
      * @param exchangeOrder exchange order object
      **/
-    function deactive(DataTypes.ExchangeOrder storage exchangeOrder) internal {
+    function deactive(ExchangeOrderType.ExchangeOrder storage exchangeOrder) internal {
         exchangeOrder.isActive = false;
     }
 
@@ -69,7 +67,9 @@ library ExchangeOrderLogic {
      * @param exchangeOrder exchange order object
      * @param buyer address of the person who closes the exchange order
      **/
-    function complete(DataTypes.ExchangeOrder storage exchangeOrder, address buyer) internal {
+    function complete(ExchangeOrderType.ExchangeOrder storage exchangeOrder, address buyer)
+        internal
+    {
         exchangeOrder.isActive = false;
         exchangeOrder.times.push(block.timestamp);
         exchangeOrder.users.push(buyer);

@@ -1,17 +1,42 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.6.12;
+pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract TheTotemOfCreation is ERC721, Ownable {
+    string private _baseUri;
+    mapping(uint256 => string) private _tokenUris;
+
     constructor(
         string memory name,
         string memory symbol,
         string memory baseUri
-    ) public ERC721(name, symbol) {
+    ) ERC721(name, symbol) {
         _setBaseURI(baseUri);
+    }
+
+    function _setBaseURI(string memory baseUri) internal {
+        _baseUri = baseUri;
+    }
+
+    function _baseURI() internal view override returns (string memory) {
+        return _baseUri;
+    }
+
+    function baseURI() external view returns (string memory) {
+        return _baseURI();
+    }
+
+    function _setTokenURI(uint256 tokenId, string memory _tokenURI) internal virtual {
+        require(_exists(tokenId), "ERC721Metadata: URI set of nonexistent token");
+        _tokenUris[tokenId] = _tokenURI;
+    }
+
+    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
+        require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
+        return _tokenUris[tokenId];
     }
 
     function mint(

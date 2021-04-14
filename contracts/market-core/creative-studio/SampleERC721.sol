@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.6.12;
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
@@ -24,9 +24,9 @@ abstract contract Ownable {
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
      */
-    constructor(address owner) internal {
-        _owner = owner;
-        emit OwnershipTransferred(address(0), owner);
+    constructor(address owner_) {
+        _owner = owner_;
+        emit OwnershipTransferred(address(0), owner_);
     }
 
     /**
@@ -70,6 +70,9 @@ abstract contract Ownable {
 // ERC721 has an auto-incremental tokenId that cannot be burned
 contract SampleERC721 is ERC721, Ownable {
     using Counters for Counters.Counter;
+    string private _baseUri;
+    mapping(uint256 => string) private _tokenUris;
+
     Counters.Counter private _tokenIds;
 
     constructor(
@@ -77,16 +80,42 @@ contract SampleERC721 is ERC721, Ownable {
         string memory name,
         string memory symbol,
         string memory baseUri
-    ) public ERC721(name, symbol) Ownable(owner) {
+    ) ERC721(name, symbol) Ownable(owner) {
         _setBaseURI(baseUri);
     }
 
-    function mint(address to, string memory tokenUri) external onlyOwner returns (uint256) {
+    function _setBaseURI(string memory baseUri) internal {
+        _baseUri = baseUri;
+    }
+
+    function _baseURI() internal view override returns (string memory) {
+        return _baseUri;
+    }
+
+    function baseURI() external view returns (string memory) {
+        return _baseURI();
+    }
+
+    function _setTokenURI(uint256 tokenId, string memory _tokenURI) internal virtual {
+        require(_exists(tokenId), "ERC721Metadata: URI set of nonexistent token");
+        _tokenUris[tokenId] = _tokenURI;
+    }
+
+    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
+        require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
+        return _tokenUris[tokenId];
+    }
+
+    function mint(
+        address to,
+        string memory tokenUri,
+        bytes memory data
+    ) external onlyOwner returns (uint256) {
         _tokenIds.increment();
 
         uint256 newNftTokenId = _tokenIds.current();
 
-        _safeMint(to, newNftTokenId);
+        _safeMint(to, newNftTokenId, data);
 
         _setTokenURI(newNftTokenId, tokenUri);
 

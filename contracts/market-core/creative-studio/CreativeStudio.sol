@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.6.12;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/proxy/Initializable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "../../interfaces/IAddressesProvider.sol";
 import "../../interfaces/INFTList.sol";
 import "../../interfaces/IERC721Factory.sol";
 import "../../interfaces/IERC1155Factory.sol";
-import "../../libraries/types/DataTypes.sol";
+import "../../libraries/types/CollectionType.sol";
 
 /**
  * @title CreativeStudio contract
@@ -21,15 +20,15 @@ contract CreativeStudio is Initializable, ReentrancyGuard {
     IERC721Factory public erc721Factory;
     IERC1155Factory public erc1155Factory;
 
-    DataTypes.Collection[] internal _allCollections;
+    CollectionType.Collection[] internal _allCollections;
 
-    mapping(address => uint256[]) _userToCollections;
+    mapping(address => uint256[]) internal _userToCollections;
 
     event Initialized(address indexed provider);
 
     event CollectionCreated(address user, address collection, bool isERC1155);
 
-    constructor() public {}
+    constructor() {}
 
     /**
      * @dev Function is invoked by the proxy contract when the CreativeStudio contract is added to the
@@ -61,8 +60,8 @@ contract CreativeStudio is Initializable, ReentrancyGuard {
         address collectionAddress =
             erc721Factory.newERC721Collection(msg.sender, name, symbol, baseUri);
 
-        DataTypes.Collection memory newCollection =
-            DataTypes.Collection({
+        CollectionType.Collection memory newCollection =
+            CollectionType.Collection({
                 id: _allCollections.length,
                 contractAddress: collectionAddress,
                 isERC1155: false,
@@ -84,8 +83,8 @@ contract CreativeStudio is Initializable, ReentrancyGuard {
     function createERC1155Collection(string memory uri) external nonReentrant {
         address collectionAddress = erc1155Factory.newERC1155Collection(msg.sender, uri);
 
-        DataTypes.Collection memory newCollection =
-            DataTypes.Collection({
+        CollectionType.Collection memory newCollection =
+            CollectionType.Collection({
                 id: _allCollections.length,
                 contractAddress: collectionAddress,
                 isERC1155: true,
@@ -106,10 +105,10 @@ contract CreativeStudio is Initializable, ReentrancyGuard {
     function getCollectionsByUser(address user)
         external
         view
-        returns (DataTypes.Collection[] memory)
+        returns (CollectionType.Collection[] memory)
     {
-        DataTypes.Collection[] memory result =
-            new DataTypes.Collection[](_userToCollections[user].length);
+        CollectionType.Collection[] memory result =
+            new CollectionType.Collection[](_userToCollections[user].length);
 
         for (uint256 i = 0; i < _userToCollections[user].length; i++) {
             result[i] = _allCollections[_userToCollections[user][i]];
@@ -120,14 +119,18 @@ contract CreativeStudio is Initializable, ReentrancyGuard {
     /**
      * @dev Get all collections
      */
-    function getAllCollections() external view returns (DataTypes.Collection[] memory) {
+    function getAllCollections() external view returns (CollectionType.Collection[] memory) {
         return _allCollections;
     }
 
     /**
      * @dev Get collection by id
      */
-    function getCollectionById(uint256 id) external view returns (DataTypes.Collection memory) {
+    function getCollectionById(uint256 id)
+        external
+        view
+        returns (CollectionType.Collection memory)
+    {
         return _allCollections[id];
     }
 
