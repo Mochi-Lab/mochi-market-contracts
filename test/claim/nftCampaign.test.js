@@ -7,13 +7,7 @@ describe('NFTCampaign', async () => {
   let admin, campaignOwner1, campaignOwner2, user1, user2;
 
   before(async () => {
-    [
-      admin,
-      campaignOwner1,
-      campaignOwner2,
-      user1,
-      user2,
-    ] = await ethers.getSigners();
+    [admin, campaignOwner1, campaignOwner2, user1, user2] = await ethers.getSigners();
 
     const ERC20 = await ethers.getContractFactory('TestERC20');
     token = await ERC20.connect(admin).deploy('LEAF', 'LEAF');
@@ -40,12 +34,8 @@ describe('NFTCampaign', async () => {
 
   describe('Register NFT', async () => {
     before(async () => {
-      await token
-        .connect(admin)
-        .mint(campaignOwner1.address, '1234567890123456789');
-      await token
-        .connect(campaignOwner1)
-        .approve(nftCampaign.address, '123456789');
+      await token.connect(admin).mint(campaignOwner1.address, '1234567890123456789');
+      await token.connect(campaignOwner1).approve(nftCampaign.address, '123456789');
     });
 
     it('check campaign owner1 balance', async () => {

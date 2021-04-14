@@ -273,6 +273,9 @@ contract Vault is Initializable, ReentrancyGuard {
         uint256 firstRate
     ) external onlyMarketAdmin {
         require(periodOfCycle > 0, Errors.PERIOD_MUST_BE_GREATER_THAN_ZERO);
+        require(block.timestamp <= startTime, Errors.INVALID_START_TIME);
+        require(numberOfCycle > 0, Errors.NUMBER_OF_CYCLE_MUST_BE_GREATER_THAN_ZERO);
+        require(firstRate > 0, Errors.FIRST_RATE_MUST_BE_GREATER_THAN_ZERO);
 
         _periodOfCycle = periodOfCycle;
         _numberOfCycle = numberOfCycle;
@@ -303,7 +306,7 @@ contract Vault is Initializable, ReentrancyGuard {
         } else if (2 ^ currentPeriod > _firstRate || currentPeriod > _numberOfCycle) {
             return 0;
         } else {
-            return _firstRate.div(2 ^ currentPeriod);
+            return _firstRate.div(2**currentPeriod);
         }
     }
 
