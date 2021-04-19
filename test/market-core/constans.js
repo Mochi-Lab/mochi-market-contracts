@@ -17,12 +17,17 @@ exports.ERRORS = {
   CALLER_NOT_SELLER: 'Caller is not seller',
   SELL_ORDER_NOT_ACTIVE: 'Sell order is not active',
   PRICE_NOT_CHANGE: 'Price is not change',
+  PRICE_IS_ZERO: 'Price is zero',
   CALLER_IS_SELLER: 'Caller is seller',
   VALUE_NOT_EQUAL_PRICE: 'Msg.value not equal price',
   PERIOD_MUST_BE_GREATER_THAN_ZERO: 'Period must be greater than zero',
   NUMBER_OF_CYCLE_MUST_BE_GREATER_THAN_ZERO: 'Number of cycle must be greater than zero',
   INVALID_START_TIME: 'Invalid start time',
   FIRST_RATE_MUST_BE_GREATER_THAN_ZERO: 'First rate must be greater than zero',
+  TOKEN_NOT_ACCEPTED: 'Token is not accepted',
+  AMOUNT_IS_NOT_EQUAL_ONE: 'Amount is not equal 1',
+  AMOUNT_IS_ZERO: 'Amount is zero',
+  AMOUNT_IS_NOT_ENOUGH: 'Amount is not enough',
 };
 
 exports.IDS = {
@@ -33,7 +38,19 @@ exports.IDS = {
   ADMIN: '0x41444d494e000000000000000000000000000000000000000000000000000000',
 };
 
-exports.FEE = {
-  NUMERATOR: '2',
-  DENOMINATOR: '1000',
+exports.REGULAR_FEE = {
+  NUMERATOR: 25,
+  DENOMINATOR: 1000,
 };
+
+exports.MOMA_FEE = {
+  NUMERATOR: 1,
+  DENOMINATOR: 100,
+};
+
+exports.ROYALTY = {
+  NUMERATOR: 20,
+  DENOMINATOR: 100,
+};
+
+exports.NATIVE_TOKEN = 'ETH';

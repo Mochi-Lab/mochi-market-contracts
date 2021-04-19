@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.6.12;
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
@@ -24,9 +24,9 @@ abstract contract Ownable {
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
      */
-    constructor(address owner) internal {
-        _owner = owner;
-        emit OwnershipTransferred(address(0), owner);
+    constructor(address owner_) {
+        _owner = owner_;
+        emit OwnershipTransferred(address(0), owner_);
     }
 
     /**
@@ -71,7 +71,7 @@ abstract contract Ownable {
 contract SampleERC1155 is ERC1155, Ownable {
     using Counters for Counters.Counter;
 
-    constructor(address owner_, string memory uri_) public ERC1155(uri_) Ownable(owner_) {}
+    constructor(address owner_, string memory uri_) ERC1155(uri_) Ownable(owner_) {}
 
     function mint(
         address _account,

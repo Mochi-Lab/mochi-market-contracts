@@ -28,9 +28,9 @@ describe('AddressesProvider', async () => {
   });
 
   it('Only owner can call setAdmin', async () => {
-    await expect(
-      addressesProvider.connect(user).setAdmin(user.address)
-    ).to.be.revertedWith(ERRORS.CALLER_NOT_OWNER);
+    await expect(addressesProvider.connect(user).setAdmin(user.address)).to.be.revertedWith(
+      ERRORS.CALLER_NOT_OWNER
+    );
   });
 
   it('Only onwer can call setNFTListImpl', async () => {
@@ -40,9 +40,7 @@ describe('AddressesProvider', async () => {
     initData = data.initData;
 
     await expect(
-      addressesProvider
-        .connect(user)
-        .setNFTListImpl(nftListImpl.address, initData)
+      addressesProvider.connect(user).setNFTListImpl(nftListImpl.address, initData)
     ).to.be.revertedWith(ERRORS.CALLER_NOT_OWNER);
   });
 
@@ -58,18 +56,13 @@ describe('AddressesProvider', async () => {
   });
 
   it('Only onwer can call setSellOrderListImpl', async () => {
-    data = await deploySellOrderListWithInitData(
-      deployer,
-      addressesProvider.address
-    );
+    data = await deploySellOrderListWithInitData(deployer, addressesProvider.address);
 
     sellOrderListImpl = data.sellOrderListImpl;
     initData = data.initData;
 
     await expect(
-      addressesProvider
-        .connect(user)
-        .setSellOrderListImpl(sellOrderListImpl.address, initData)
+      addressesProvider.connect(user).setSellOrderListImpl(sellOrderListImpl.address, initData)
     ).to.be.revertedWith(ERRORS.CALLER_NOT_OWNER);
   });
 
@@ -80,23 +73,17 @@ describe('AddressesProvider', async () => {
     initData = data.initData;
 
     await expect(
-      addressesProvider
-        .connect(user)
-        .setMarketImpl(marketImpl.address, initData)
+      addressesProvider.connect(user).setMarketImpl(marketImpl.address, initData)
     ).to.be.revertedWith(ERRORS.CALLER_NOT_OWNER);
   });
 
   it('Only owner can call setAddressAsProxy', async () => {
     await expect(
-      addressesProvider
-        .connect(user)
-        .setAddressAsProxy(IDS.NFT_LIST, someAddress.address, '0x')
+      addressesProvider.connect(user).setAddressAsProxy(IDS.NFT_LIST, someAddress.address, '0x')
     ).to.be.revertedWith(ERRORS.CALLER_NOT_OWNER);
 
     await expect(
-      addressesProvider
-        .connect(user)
-        .setAddressAsProxy(IDS.VAULT, someAddress.address, '0x')
+      addressesProvider.connect(user).setAddressAsProxy(IDS.VAULT, someAddress.address, '0x')
     ).to.be.revertedWith(ERRORS.CALLER_NOT_OWNER);
 
     await expect(
@@ -106,9 +93,7 @@ describe('AddressesProvider', async () => {
     ).to.be.revertedWith(ERRORS.CALLER_NOT_OWNER);
 
     await expect(
-      addressesProvider
-        .connect(user)
-        .setAddressAsProxy(IDS.MARKET, someAddress.address, '0x')
+      addressesProvider.connect(user).setAddressAsProxy(IDS.MARKET, someAddress.address, '0x')
     ).to.be.revertedWith(ERRORS.CALLER_NOT_OWNER);
   });
 
@@ -119,52 +104,30 @@ describe('AddressesProvider', async () => {
     });
 
     it('NFTListImpl must be set successfully', async () => {
-      data = await deployNFTListWithInitData(
-        deployer,
-        addressesProvider.address
-      );
+      data = await deployNFTListWithInitData(deployer, addressesProvider.address);
 
       nftListImpl = data.nftListImpl;
       initData = data.initData;
 
-      await addressesProvider
-        .connect(deployer)
-        .setNFTListImpl(nftListImpl.address, initData);
+      await addressesProvider.connect(deployer).setNFTListImpl(nftListImpl.address, initData);
 
       let nftListProxyAddress = await addressesProvider.getNFTList();
-      let nftListProxy = await ethers.getContractAt(
-        'NFTList',
-        nftListProxyAddress
-      );
-      expect(await nftListProxy.addressesProvider()).to.equal(
-        addressesProvider.address
-      );
+      let nftListProxy = await ethers.getContractAt('NFTList', nftListProxyAddress);
+      expect(await nftListProxy.addressesProvider()).to.equal(addressesProvider.address);
     });
 
     it('Call setNFTListImpl at second time must be successfully', async () => {
-      data = await deployNFTListWithInitData(
-        deployer,
-        addressesProvider.address
-      );
+      data = await deployNFTListWithInitData(deployer, addressesProvider.address);
 
       nftListImpl = data.nftListImpl;
       initData = data.initData;
 
-      await addressesProvider
-        .connect(deployer)
-        .setNFTListImpl(nftListImpl.address, initData);
-      await addressesProvider
-        .connect(deployer)
-        .setNFTListImpl(nftListImpl.address, '0x');
+      await addressesProvider.connect(deployer).setNFTListImpl(nftListImpl.address, initData);
+      await addressesProvider.connect(deployer).setNFTListImpl(nftListImpl.address, '0x');
 
       let nftListProxyAddress = await addressesProvider.getNFTList();
-      let nftListProxy = await ethers.getContractAt(
-        'NFTList',
-        nftListProxyAddress
-      );
-      expect(await nftListProxy.addressesProvider()).to.equal(
-        addressesProvider.address
-      );
+      let nftListProxy = await ethers.getContractAt('NFTList', nftListProxyAddress);
+      expect(await nftListProxy.addressesProvider()).to.equal(addressesProvider.address);
     });
 
     it('VaultImpl must be set successfully', async () => {
@@ -173,15 +136,11 @@ describe('AddressesProvider', async () => {
       vaultImpl = data.vaultImpl;
       initData = data.initData;
 
-      await addressesProvider
-        .connect(deployer)
-        .setVaultImpl(vaultImpl.address, initData);
+      await addressesProvider.connect(deployer).setVaultImpl(vaultImpl.address, initData);
 
       let vaultProxyAddress = await addressesProvider.getVault();
       let vaultProxy = await ethers.getContractAt('Vault', vaultProxyAddress);
-      expect(await vaultProxy.addressesProvider()).to.equal(
-        addressesProvider.address
-      );
+      expect(await vaultProxy.addressesProvider()).to.equal(addressesProvider.address);
     });
 
     it('Call setVaultImpl at second time must be successfully', async () => {
@@ -190,26 +149,17 @@ describe('AddressesProvider', async () => {
       vaultImpl = data.vaultImpl;
       initData = data.initData;
 
-      await addressesProvider
-        .connect(deployer)
-        .setVaultImpl(vaultImpl.address, initData);
+      await addressesProvider.connect(deployer).setVaultImpl(vaultImpl.address, initData);
 
-      await addressesProvider
-        .connect(deployer)
-        .setVaultImpl(vaultImpl.address, '0x');
+      await addressesProvider.connect(deployer).setVaultImpl(vaultImpl.address, '0x');
 
       let vaultProxyAddress = await addressesProvider.getVault();
       let vaultProxy = await ethers.getContractAt('Vault', vaultProxyAddress);
-      expect(await vaultProxy.addressesProvider()).to.equal(
-        addressesProvider.address
-      );
+      expect(await vaultProxy.addressesProvider()).to.equal(addressesProvider.address);
     });
 
     it('SellOrderListImpl must be set successfully', async () => {
-      data = await deploySellOrderListWithInitData(
-        deployer,
-        addressesProvider.address
-      );
+      data = await deploySellOrderListWithInitData(deployer, addressesProvider.address);
 
       sellOrderListImpl = data.sellOrderListImpl;
       initData = data.initData;
@@ -223,16 +173,11 @@ describe('AddressesProvider', async () => {
         'SellOrderList',
         sellOrderListProxyAddress
       );
-      expect(await sellOrderListProxy.addressesProvider()).to.equal(
-        addressesProvider.address
-      );
+      expect(await sellOrderListProxy.addressesProvider()).to.equal(addressesProvider.address);
     });
 
     it('Call setSellOrderListImpl at second time must be successfully', async () => {
-      data = await deploySellOrderListWithInitData(
-        deployer,
-        addressesProvider.address
-      );
+      data = await deploySellOrderListWithInitData(deployer, addressesProvider.address);
 
       sellOrderListImpl = data.sellOrderListImpl;
       initData = data.initData;
@@ -250,59 +195,35 @@ describe('AddressesProvider', async () => {
         'SellOrderList',
         sellOrderListProxyAddress
       );
-      expect(await sellOrderListProxy.addressesProvider()).to.equal(
-        addressesProvider.address
-      );
+      expect(await sellOrderListProxy.addressesProvider()).to.equal(addressesProvider.address);
     });
 
     it('MarketImpl must be set successfully', async () => {
-      data = await deployMarketWithInitData(
-        deployer,
-        addressesProvider.address
-      );
+      data = await deployMarketWithInitData(deployer, addressesProvider.address);
 
       marketImpl = data.marketImpl;
       initData = data.initData;
 
-      await addressesProvider
-        .connect(deployer)
-        .setMarketImpl(marketImpl.address, initData);
+      await addressesProvider.connect(deployer).setMarketImpl(marketImpl.address, initData);
 
       let marketProxyAddress = await addressesProvider.getMarket();
-      let marketProxy = await ethers.getContractAt(
-        'Market',
-        marketProxyAddress
-      );
-      expect(await marketProxy.addressesProvider()).to.equal(
-        addressesProvider.address
-      );
+      let marketProxy = await ethers.getContractAt('Market', marketProxyAddress);
+      expect(await marketProxy.addressesProvider()).to.equal(addressesProvider.address);
     });
 
     it('Call setMarketImpl at second time must be successfully', async () => {
-      data = await deployMarketWithInitData(
-        deployer,
-        addressesProvider.address
-      );
+      data = await deployMarketWithInitData(deployer, addressesProvider.address);
 
       marketImpl = data.marketImpl;
       initData = data.initData;
 
-      await addressesProvider
-        .connect(deployer)
-        .setMarketImpl(marketImpl.address, initData);
+      await addressesProvider.connect(deployer).setMarketImpl(marketImpl.address, initData);
 
-      await addressesProvider
-        .connect(deployer)
-        .setMarketImpl(marketImpl.address, '0x');
+      await addressesProvider.connect(deployer).setMarketImpl(marketImpl.address, '0x');
 
       let marketProxyAddress = await addressesProvider.getMarket();
-      let marketProxy = await ethers.getContractAt(
-        'Market',
-        marketProxyAddress
-      );
-      expect(await marketProxy.addressesProvider()).to.equal(
-        addressesProvider.address
-      );
+      let marketProxy = await ethers.getContractAt('Market', marketProxyAddress);
+      expect(await marketProxy.addressesProvider()).to.equal(addressesProvider.address);
     });
   });
 });

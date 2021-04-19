@@ -1,13 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.6.12;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
-import "../types/DataTypes.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import "../types/SellOrderType.sol";
 
 library SellOrderLogic {
-    using SafeMath for uint256;
-
     /**
      * @dev Create a sell order object
      * @param sellId Id of sell order
@@ -26,11 +22,11 @@ library SellOrderLogic {
         address payable seller,
         uint256 price,
         address token
-    ) internal view returns (DataTypes.SellOrder memory) {
+    ) internal view returns (SellOrderType.SellOrder memory) {
         address[] memory emptyBuyers;
         uint256[] memory emptyBuyTimes;
         return
-            DataTypes.SellOrder({
+            SellOrderType.SellOrder({
                 sellId: sellId,
                 nftAddress: nftAddress,
                 tokenId: tokenId,
@@ -50,7 +46,7 @@ library SellOrderLogic {
      * @dev Deactive a sell order
      * @param sellOrder Sell order object
      **/
-    function deactive(DataTypes.SellOrder storage sellOrder) internal {
+    function deactive(SellOrderType.SellOrder storage sellOrder) internal {
         sellOrder.isActive = false;
     }
 
@@ -61,13 +57,13 @@ library SellOrderLogic {
      * @param amount The amount that buyer wants to buy
      **/
     function complete(
-        DataTypes.SellOrder storage sellOrder,
+        SellOrderType.SellOrder storage sellOrder,
         address buyer,
         uint256 amount
     ) internal {
         sellOrder.buyTimes.push(block.timestamp);
         sellOrder.buyers.push(buyer);
-        sellOrder.soldAmount = sellOrder.soldAmount.add(amount);
+        sellOrder.soldAmount = sellOrder.soldAmount + amount;
     }
 
     /**
@@ -75,7 +71,7 @@ library SellOrderLogic {
      * @param sellOrder Sell order object
      * @param newPrice New price of the sell order
      **/
-    function updatePrice(DataTypes.SellOrder storage sellOrder, uint256 newPrice) internal {
+    function updatePrice(SellOrderType.SellOrder storage sellOrder, uint256 newPrice) internal {
         sellOrder.price = newPrice;
     }
 }

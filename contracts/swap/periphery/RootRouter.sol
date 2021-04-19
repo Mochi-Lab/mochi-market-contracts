@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.6.12;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import "../factory/interfaces/IFactory.sol";
@@ -10,8 +9,6 @@ import "./libraries/MochiswapLibrary.sol";
 import "./interfaces/IWETH.sol";
 
 contract RootRouter {
-    using SafeMath for uint256;
-
     address public immutable factory;
     address public immutable WETH;
 
@@ -20,7 +17,7 @@ contract RootRouter {
         _;
     }
 
-    constructor(address _factory, address _WETH) public {
+    constructor(address _factory, address _WETH) {
         factory = _factory;
         WETH = _WETH;
     }
@@ -52,8 +49,7 @@ contract RootRouter {
                 require(amountBOptimal >= amountBMin, "Router: INSUFFICIENT_B_AMOUNT");
                 (amountA, amountB) = (amountADesired, amountBOptimal);
             } else {
-                uint256 amountAOptimal =
-                    MochiswapLibrary.quote(amountBDesired, reserveB, reserveA);
+                uint256 amountAOptimal = MochiswapLibrary.quote(amountBDesired, reserveB, reserveA);
                 assert(amountAOptimal <= amountADesired);
                 require(amountAOptimal >= amountAMin, "Router: INSUFFICIENT_A_AMOUNT");
                 (amountA, amountB) = (amountAOptimal, amountBDesired);
@@ -190,7 +186,7 @@ contract RootRouter {
         bytes32 s
     ) external virtual returns (uint256 amountA, uint256 amountB) {
         address pair = MochiswapLibrary.pairFor(factory, tokenA, tokenB);
-        uint256 value = approveMax ? uint256(-1) : liquidity;
+        uint256 value = approveMax ? type(uint256).max : liquidity;
         IPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
         (amountA, amountB) = removeLiquidity(
             tokenA,
@@ -216,7 +212,7 @@ contract RootRouter {
         bytes32 s
     ) external virtual returns (uint256 amountToken, uint256 amountETH) {
         address pair = MochiswapLibrary.pairFor(factory, token, WETH);
-        uint256 value = approveMax ? uint256(-1) : liquidity;
+        uint256 value = approveMax ? type(uint256).max : liquidity;
         IPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
         (amountToken, amountETH) = removeLiquidityETH(
             token,
@@ -264,7 +260,7 @@ contract RootRouter {
         bytes32 s
     ) external virtual returns (uint256 amountETH) {
         address pair = MochiswapLibrary.pairFor(factory, token, WETH);
-        uint256 value = approveMax ? uint256(-1) : liquidity;
+        uint256 value = approveMax ? type(uint256).max : liquidity;
         IPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
         amountETH = removeLiquidityETHSupportingFeeOnTransferTokens(
             token,
@@ -430,7 +426,7 @@ contract RootRouter {
                 (uint256 reserve0, uint256 reserve1, ) = pair.getReserves();
                 (uint256 reserveInput, uint256 reserveOutput) =
                     input == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
-                amountInput = IERC20(input).balanceOf(address(pair)).sub(reserveInput);
+                amountInput = IERC20(input).balanceOf(address(pair)) - reserveInput;
                 amountOutput = MochiswapLibrary.getAmountOut(
                     amountInput,
                     reserveInput,
@@ -461,7 +457,7 @@ contract RootRouter {
         uint256 balanceBefore = IERC20(path[path.length - 1]).balanceOf(to);
         _swapSupportingFeeOnTransferTokens(path, to);
         require(
-            IERC20(path[path.length - 1]).balanceOf(to).sub(balanceBefore) >= amountOutMin,
+            IERC20(path[path.length - 1]).balanceOf(to) - balanceBefore >= amountOutMin,
             "Router: INSUFFICIENT_OUTPUT_AMOUNT"
         );
     }
@@ -475,13 +471,11 @@ contract RootRouter {
         require(path[0] == WETH, "Router: INVALID_PATH");
         uint256 amountIn = msg.value;
         IWETH(WETH).deposit{value: amountIn}();
-        assert(
-            IWETH(WETH).transfer(MochiswapLibrary.pairFor(factory, path[0], path[1]), amountIn)
-        );
+        assert(IWETH(WETH).transfer(MochiswapLibrary.pairFor(factory, path[0], path[1]), amountIn));
         uint256 balanceBefore = IERC20(path[path.length - 1]).balanceOf(to);
         _swapSupportingFeeOnTransferTokens(path, to);
         require(
-            IERC20(path[path.length - 1]).balanceOf(to).sub(balanceBefore) >= amountOutMin,
+            IERC20(path[path.length - 1]).balanceOf(to) - balanceBefore >= amountOutMin,
             "Router: INSUFFICIENT_OUTPUT_AMOUNT"
         );
     }

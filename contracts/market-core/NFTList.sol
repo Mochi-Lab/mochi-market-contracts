@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.6.12;
+pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/proxy/Initializable.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
 import "../libraries/helpers/Errors.sol";
-import "../libraries/types/DataTypes.sol";
 import "../libraries/logic/NFTInfoLogic.sol";
 import "../interfaces/IAddressesProvider.sol";
 import "../libraries/helpers/ArrayLib.sol";
@@ -20,13 +18,12 @@ import "../libraries/helpers/ArrayLib.sol";
  * @author MochiLab
  **/
 contract NFTList is Initializable {
-    using SafeMath for uint256;
-    using NFTInfoLogic for DataTypes.NFTInfo;
+    using NFTInfoLogic for NFTInfoType.NFTInfo;
     using ArrayLib for uint256[];
 
     IAddressesProvider public addressesProvider;
 
-    mapping(address => DataTypes.NFTInfo) internal _nftToInfo;
+    mapping(address => NFTInfoType.NFTInfo) internal _nftToInfo;
     address[] internal _nftsList;
     uint256[] internal _acceptedList;
 
@@ -64,22 +61,22 @@ contract NFTList is Initializable {
      * @dev Register a nft address
      * - Can be called by anyone
      * @param nftAddress The address of nft contract
-     * @param isERC1155 What type of nft, ERC1155 or ERC721?
+     * @param isErc1155 What type of nft, ERC1155 or ERC721?
      **/
-    function registerNFT(address nftAddress, bool isERC1155) external {
+    function registerNFT(address nftAddress, bool isErc1155) external {
         require(!_nftToInfo[nftAddress].isRegistered, Errors.NFT_ALREADY_REGISTERED);
 
-        if (isERC1155) {
+        if (isErc1155) {
             require(IERC1155(nftAddress).balanceOf(address(this), 0) >= 0);
         } else {
             require(IERC721(nftAddress).balanceOf(address(this)) >= 0);
         }
 
-        _nftToInfo[nftAddress].register(_nftsList.length, nftAddress, isERC1155);
+        _nftToInfo[nftAddress].register(_nftsList.length, nftAddress, isErc1155);
 
         _nftsList.push(nftAddress);
 
-        emit NFTRegistered(nftAddress, isERC1155);
+        emit NFTRegistered(nftAddress, isErc1155);
     }
 
     /**
@@ -130,14 +127,14 @@ contract NFTList is Initializable {
      * @dev Register and accepts a nft address directly
      * - Can only be called by creative studio
      * @param nftAddress The address of nft contract
-     * @param isERC1155 What type of nft, ERC1155 or ERC721?
+     * @param isErc1155 What type of nft, ERC1155 or ERC721?
      **/
-    function addNFTDirectly(address nftAddress, bool isERC1155) external onlyCreativeStudio {
-        _nftToInfo[nftAddress].register(_nftsList.length, nftAddress, isERC1155);
+    function addNFTDirectly(address nftAddress, bool isErc1155) external onlyCreativeStudio {
+        _nftToInfo[nftAddress].register(_nftsList.length, nftAddress, isErc1155);
         _nftsList.push(nftAddress);
         _nftToInfo[nftAddress].accept();
         _acceptedList.push(_nftToInfo[nftAddress].id);
-        emit NFTAdded(nftAddress, isERC1155);
+        emit NFTAdded(nftAddress, isErc1155);
     }
 
     /**
@@ -145,7 +142,7 @@ contract NFTList is Initializable {
      * @param nftAddress The address of nft
      * @return The information of nft
      **/
-    function getNFTInfo(address nftAddress) external view returns (DataTypes.NFTInfo memory) {
+    function getNFTInfo(address nftAddress) external view returns (NFTInfoType.NFTInfo memory) {
         return _nftToInfo[nftAddress];
     }
 
@@ -178,8 +175,8 @@ contract NFTList is Initializable {
         return _nftToInfo[nftAddress].isAccepted;
     }
 
-    function getAllNFT() external view returns (DataTypes.NFTInfo[] memory) {
-        DataTypes.NFTInfo[] memory result = new DataTypes.NFTInfo[](_nftsList.length);
+    function getAllNFT() external view returns (NFTInfoType.NFTInfo[] memory) {
+        NFTInfoType.NFTInfo[] memory result = new NFTInfoType.NFTInfo[](_nftsList.length);
         for (uint256 i = 0; i < _nftsList.length; i++) {
             result[i] = _nftToInfo[_nftsList[i]];
         }

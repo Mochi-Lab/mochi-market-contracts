@@ -1,15 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.6.12;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "@openzeppelin/contracts/proxy/Initializable.sol";
 
-contract WrappedERC721 is ERC20, Initializable {
-    using SafeMath for uint256;
+contract WrappedERC721 is ERC20 {
     using Strings for uint256;
 
     address public erc721;
@@ -17,7 +13,6 @@ contract WrappedERC721 is ERC20, Initializable {
     uint256 public unit = 1 ether;
 
     constructor(address _erc721, uint256 _tokenId)
-        public
         ERC20(
             string(
                 abi.encodePacked(
@@ -27,9 +22,7 @@ contract WrappedERC721 is ERC20, Initializable {
                     _tokenId.toString()
                 )
             ),
-            string(
-                abi.encodePacked("WERC721-", ERC721(_erc721).symbol(), "-", _tokenId.toString())
-            )
+            string(abi.encodePacked("WERC721-", ERC721(_erc721).symbol(), "-", _tokenId.toString()))
         )
     {
         erc721 = _erc721;

@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.6.12;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/proxy/Initializable.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
@@ -20,8 +19,6 @@ import "../interfaces/IAddressesProvider.sol";
  **/
 
 contract Vault is Initializable, ReentrancyGuard {
-    using SafeMath for uint256;
-
     uint256 public constant SAFE_NUMBER = 1e12;
 
     IAddressesProvider public addressesProvider;
@@ -168,20 +165,22 @@ contract Vault is Initializable, ReentrancyGuard {
         uint256 forRoyalty = _calculateRoyalty(amount);
 
         if (forRoyalty > 0) {
-            _nftToRoyalty[nftAddress][token] = _nftToRoyalty[nftAddress][token].add(forRoyalty);
+            _nftToRoyalty[nftAddress][token] = _nftToRoyalty[nftAddress][token] + forRoyalty;
         }
 
-        _mochiFund[token] = _mochiFund[token].add(amount - forRoyalty);
+        _mochiFund[token] = _mochiFund[token] + (amount - forRoyalty);
 
         if (_rewardIsActive == true) {
             uint256 currentRate = getCurrentRate();
-            uint256 rewardTokenAmount = (amount.mul(currentRate)).div(1e18);
+            uint256 rewardTokenAmount = (amount * currentRate) / 1e18;
             if (rewardTokenAmount > 0) {
                 address rewardToken = _tokenToRewardToken[token];
-                _rewardTokenBalance[seller][rewardToken] = _rewardTokenBalance[rewardToken][seller]
-                    .add(rewardTokenAmount);
-                _rewardTokenBalance[buyer][rewardToken] = _rewardTokenBalance[rewardToken][seller]
-                    .add(rewardTokenAmount);
+                _rewardTokenBalance[seller][rewardToken] =
+                    _rewardTokenBalance[rewardToken][seller] +
+                    rewardTokenAmount;
+                _rewardTokenBalance[buyer][rewardToken] =
+                    _rewardTokenBalance[rewardToken][seller] +
+                    rewardTokenAmount;
             }
         }
 
@@ -202,7 +201,7 @@ contract Vault is Initializable, ReentrancyGuard {
     ) external onlyMarketAdmin nonReentrant {
         require(amount <= _mochiFund[token], Errors.INSUFFICIENT_BALANCE);
 
-        _mochiFund[token] = _mochiFund[token].sub(amount);
+        _mochiFund[token] = _mochiFund[token] - amount;
 
         if (token == address(0)) {
             receiver.transfer(amount);
@@ -230,7 +229,7 @@ contract Vault is Initializable, ReentrancyGuard {
         require(_nftToRoyalty[nftAddress][token] >= amount, Errors.INSUFFICIENT_BALANCE);
         require(msg.sender == Ownable(nftAddress).owner(), Errors.CALLER_NOT_CONTRACT_OWNER);
 
-        _nftToRoyalty[nftAddress][token] = _nftToRoyalty[nftAddress][token].sub(amount);
+        _nftToRoyalty[nftAddress][token] = _nftToRoyalty[nftAddress][token] - amount;
 
         if (token == address(0)) {
             receiver.transfer(amount);
@@ -258,8 +257,9 @@ contract Vault is Initializable, ReentrancyGuard {
             Errors.INSUFFICIENT_BALANCE
         );
 
-        _rewardTokenBalance[msg.sender][rewardToken] = _rewardTokenBalance[msg.sender][rewardToken]
-            .sub(amount);
+        _rewardTokenBalance[msg.sender][rewardToken] =
+            _rewardTokenBalance[msg.sender][rewardToken] -
+            amount;
 
         MochiRewardToken(rewardToken).mint(receiver, amount);
 
@@ -306,12 +306,12 @@ contract Vault is Initializable, ReentrancyGuard {
         } else if (2 ^ currentPeriod > _firstRate || currentPeriod > _numberOfCycle) {
             return 0;
         } else {
-            return _firstRate.div(2**currentPeriod);
+            return _firstRate / (2**currentPeriod);
         }
     }
 
     function getCurrentPeriod() public view returns (uint256) {
-        return (block.timestamp.sub(_startTime)).div(_periodOfCycle);
+        return (block.timestamp - _startTime) / _periodOfCycle;
     }
 
     function getRewardToken(address token) external view returns (address) {
@@ -347,8 +347,8 @@ contract Vault is Initializable, ReentrancyGuard {
     }
 
     function _calculateRoyalty(uint256 amount) internal view returns (uint256) {
-        uint256 royaltyAmount =
-            ((amount * SAFE_NUMBER * _royaltyNumerator) / _royaltyDenominator) / SAFE_NUMBER;
+        uint256 royaltyAmount = ((amount * SAFE_NUMBER * _royaltyNumerator) / _royaltyDenominator) /
+            SAFE_NUMBER;
         return royaltyAmount;
     }
 }

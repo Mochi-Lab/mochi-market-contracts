@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.6.12;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
@@ -15,7 +13,6 @@ import "../libraries/helpers/ArrayLib.sol";
  * @author MochiLab
  **/
 contract NFTCampaign is Ownable, ReentrancyGuard {
-    using SafeMath for uint256;
     using ArrayLib for uint256[];
 
     // Campaign status 0: Init, 1: Running, 2: Paused, 3: Ended
@@ -77,8 +74,6 @@ contract NFTCampaign is Ownable, ReentrancyGuard {
     event ResumeCampaign(uint256 campaignId);
     event ForceEndCampaign(uint256 campaignId);
 
-    constructor() public {}
-
     /**
      * @dev Register a new campaign
      * - Can be called by anyone
@@ -125,11 +120,7 @@ contract NFTCampaign is Ownable, ReentrancyGuard {
         _ownedCampaigns[_msgSender()].push(campaignId);
         _nftToCampaigns[nftAddress].push(campaignId);
 
-        IERC20(tokenAddress).transferFrom(
-            _msgSender(),
-            address(this),
-            totalSlots.mul(amountPerSlot)
-        );
+        IERC20(tokenAddress).transferFrom(_msgSender(), address(this), totalSlots * amountPerSlot);
 
         emit CampaignAdded(
             campaignId,
@@ -195,10 +186,10 @@ contract NFTCampaign is Ownable, ReentrancyGuard {
         IERC20(info.tokenAddress).transferFrom(
             _msgSender(),
             address(this),
-            slots.mul(info.amountPerSlot)
+            slots * info.amountPerSlot
         );
 
-        _campaigns[campaignId].remainSlots = info.remainSlots.add(slots);
+        _campaigns[campaignId].remainSlots = info.remainSlots + slots;
     }
 
     /**
@@ -215,8 +206,7 @@ contract NFTCampaign is Ownable, ReentrancyGuard {
     ) external {
         require(_campaigns[campaignId].campaignOwner == _msgSender(), "Campaign owner required");
         require(
-            block.timestamp < _campaigns[campaignId].startTime &&
-                _campaigns[campaignId].status < 2,
+            block.timestamp < _campaigns[campaignId].startTime && _campaigns[campaignId].status < 2,
             "Campaign should not be started"
         );
         require(endTime > startTime, "Invalid time");
@@ -266,9 +256,9 @@ contract NFTCampaign is Ownable, ReentrancyGuard {
                 _claimStatus[campaignId][nftIds[i]] == false
             ) {
                 if (_campaigns[campaignId].remainSlots <= 0) break;
-                totalClaim = totalClaim.add(_campaigns[campaignId].amountPerSlot);
+                totalClaim = totalClaim + _campaigns[campaignId].amountPerSlot;
                 _claimStatus[campaignId][nftIds[i]] = true;
-                _campaigns[campaignId].remainSlots = _campaigns[campaignId].remainSlots.sub(1);
+                _campaigns[campaignId].remainSlots = _campaigns[campaignId].remainSlots - 1;
             }
         }
 
@@ -287,8 +277,7 @@ contract NFTCampaign is Ownable, ReentrancyGuard {
     function pauseCampaign(uint256 campaignId) external {
         require(_campaigns[campaignId].campaignOwner == _msgSender(), "Campaign owner required");
         require(
-            _campaigns[campaignId].status == 1 &&
-                block.timestamp <= _campaigns[campaignId].endTime,
+            _campaigns[campaignId].status == 1 && block.timestamp <= _campaigns[campaignId].endTime,
             "Campaign is not running"
         );
 
@@ -332,7 +321,7 @@ contract NFTCampaign is Ownable, ReentrancyGuard {
         }
 
         uint256 remainFunds =
-            _campaigns[campaignId].remainSlots.mul(_campaigns[campaignId].amountPerSlot);
+            _campaigns[campaignId].remainSlots * _campaigns[campaignId].amountPerSlot;
 
         _campaigns[campaignId].remainSlots = 0;
         _campaigns[campaignId].status = 3;
@@ -396,11 +385,11 @@ contract NFTCampaign is Ownable, ReentrancyGuard {
                 _claimStatus[campaignId][nftIds[i]] == false
             ) {
                 if (claimableSlots >= _campaigns[campaignId].remainSlots) break;
-                claimableSlots = claimableSlots.add(1);
+                claimableSlots = claimableSlots + 1;
             }
         }
 
-        return claimableSlots.mul(_campaigns[campaignId].amountPerSlot);
+        return claimableSlots * _campaigns[campaignId].amountPerSlot;
     }
 
     /**

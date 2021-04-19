@@ -2,7 +2,8 @@
 
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
-const { expectRevert, time, ether } = require('@openzeppelin/test-helpers');
+const { expectRevert, time } = require('@openzeppelin/test-helpers');
+const { NATIVE_TOKEN, ROYALTY } = require('../constans');
 
 const {
   deployAddressesProvider,
@@ -13,12 +14,13 @@ const {
 } = require('../helpers');
 const { ERRORS } = require('../constans');
 
-describe.only('Vault Contract', async () => {
+describe('Vault Contract', async () => {
   let addressesProvider, vault, market;
+  let moma;
   let deployer, marketAdmin, alice, bob;
   let ETH_Address = '0x0000000000000000000000000000000000000000';
-  let nftERC721, nftERC1155;
-  let token;
+  let nftERC721;
+  let dai;
   let periodOfCycle = '604800'; // Every 7 days the rate will be halved
   let numberOfCycle = '59'; // Total number of halves
 
@@ -27,82 +29,102 @@ describe.only('Vault Contract', async () => {
 
     addressesProvider = await deployAddressesProvider(deployer);
 
-    let modules = await allSetup(deployer, addressesProvider, deployer, marketAdmin);
+    moma = await deployTestERC20(deployer, 'MOchi MArket Token', 'MOMA');
+
+    let modules = await allSetup(deployer, addressesProvider, deployer, marketAdmin, moma.address);
     addressesProvider = modules.addressesProvider;
     vault = modules.vaultProxy;
     market = modules.marketProxy;
 
-    nftERC721 = await deployTestERC721(alice, 'TestERC721', 'TestERC721');
-    nftERC1155 = await deployTestERC1155(alice, 'TestERC1155');
-    token = await deployTestERC20(alice, 'TestERC20', 'TestERc20');
+    nftERC721 = await deployTestERC721(deployer, 'TestERC721', 'TestERC721');
+    nftERC1155 = await deployTestERC1155(deployer, 'TestERC1155');
+    dai = await deployTestERC20(deployer, 'DAI Token', 'DAI');
   });
 
   it('All deploy successfully', async () => {
     expect(await vault.addressesProvider()).to.equal(addressesProvider.address);
     expect(await addressesProvider.getVault()).to.equal(vault.address);
     expect(await addressesProvider.getAdmin()).to.equal(marketAdmin.address);
+
+    let rewardTokenForNativeToken = await ethers.getContractAt(
+      'MochiRewardToken',
+      await vault.getRewardToken(ETH_Address)
+    );
+
+    expect(await rewardTokenForNativeToken.name()).to.be.equal('rMOCHI for: ' + NATIVE_TOKEN);
+    expect(await rewardTokenForNativeToken.symbol()).to.be.equal('rMOCHI_' + NATIVE_TOKEN);
+
+    let royalty = await vault.getRoyaltyParameters();
+    expect(parseInt(royalty[0])).to.be.equal(ROYALTY.NUMERATOR);
+    expect(parseInt(royalty[1])).to.be.equal(ROYALTY.DENOMINATOR);
   });
 
   it('Deposit fail cause sender is not Market', async () => {
-    await expect(
+    await expectRevert(
       vault
         .connect(marketAdmin)
         .deposit(nftERC721.address, alice.address, bob.address, ETH_Address, 10000, {
           value: 10000,
-        })
-    ).to.be.revertedWith(ERRORS.CALLER_NOT_MARKET);
+        }),
+      ERRORS.CALLER_NOT_MARKET
+    );
 
-    await expect(
+    await expectRevert(
       vault
         .connect(deployer)
         .deposit(nftERC721.address, alice.address, bob.address, ETH_Address, 10000, {
           value: 10000,
-        })
-    ).to.be.revertedWith(ERRORS.CALLER_NOT_MARKET);
+        }),
+      ERRORS.CALLER_NOT_MARKET
+    );
 
-    await expect(
+    await expectRevert(
       vault
         .connect(alice)
         .deposit(nftERC721.address, alice.address, bob.address, ETH_Address, 10000, {
           value: 10000,
-        })
-    ).to.be.revertedWith(ERRORS.CALLER_NOT_MARKET);
+        }),
+      ERRORS.CALLER_NOT_MARKET
+    );
 
-    await expect(
+    await expectRevert(
       vault
         .connect(bob)
         .deposit(nftERC721.address, alice.address, bob.address, ETH_Address, 10000, {
           value: 10000,
-        })
-    ).to.be.revertedWith(ERRORS.CALLER_NOT_MARKET);
+        }),
+      ERRORS.CALLER_NOT_MARKET
+    );
 
-    await expect(
+    await expectRevert(
       vault
         .connect(marketAdmin)
-        .deposit(nftERC721.address, alice.address, bob.address, token.address, 10000)
-    ).to.be.revertedWith(ERRORS.CALLER_NOT_MARKET);
+        .deposit(nftERC721.address, alice.address, bob.address, dai.address, 10000),
+      ERRORS.CALLER_NOT_MARKET
+    );
 
-    await expect(
+    await expectRevert(
       vault
         .connect(deployer)
-        .deposit(nftERC721.address, alice.address, bob.address, token.address, 10000)
-    ).to.be.revertedWith(ERRORS.CALLER_NOT_MARKET);
+        .deposit(nftERC721.address, alice.address, bob.address, dai.address, 10000),
+      ERRORS.CALLER_NOT_MARKET
+    );
 
-    await expect(
+    await expectRevert(
       vault
         .connect(alice)
-        .deposit(nftERC721.address, alice.address, bob.address, token.address, 10000)
-    ).to.be.revertedWith(ERRORS.CALLER_NOT_MARKET);
+        .deposit(nftERC721.address, alice.address, bob.address, dai.address, 10000),
+      ERRORS.CALLER_NOT_MARKET
+    );
 
-    await expect(
-      vault
-        .connect(bob)
-        .deposit(nftERC721.address, alice.address, bob.address, token.address, 10000)
-    ).to.be.revertedWith(ERRORS.CALLER_NOT_MARKET);
+    await expectRevert(
+      vault.connect(bob).deposit(nftERC721.address, alice.address, bob.address, dai.address, 10000),
+      ERRORS.CALLER_NOT_MARKET
+    );
   });
 
   it('User who is not Market Admin cannot setup reward parameters', async () => {
-    let startTime = (await time.latest()) + time.duration.days('1');
+    let startTime = parseInt(await time.latest()) + parseInt(time.duration.days('1'));
     await expectRevert(
       vault
         .connect(deployer)
@@ -126,7 +148,7 @@ describe.only('Vault Contract', async () => {
   });
 
   it('Market Admin setups fail with invalid parameters', async () => {
-    let startTime = (await time.latest()) + time.duration.days('1');
+    let startTime = parseInt(await time.latest()) + parseInt(time.duration.days('1'));
     await expectRevert(
       vault
         .connect(marketAdmin)
@@ -157,7 +179,7 @@ describe.only('Vault Contract', async () => {
   });
 
   it('Market Admin setups reward parameters successfully', async () => {
-    let startTime = parseInt(await time.latest());
+    let startTime = parseInt(await time.latest()) + parseInt(time.duration.days(1));
     await vault
       .connect(marketAdmin)
       .setupRewardParameters(periodOfCycle, numberOfCycle, startTime, '1000000000000000000');
@@ -197,22 +219,26 @@ describe.only('Vault Contract', async () => {
   });
 
   it('User who is not Market Admin cannot withdraw market fund', async () => {
-    await expect(
-      vault.connect(deployer).withdrawFund(ETH_Address, 1000, deployer.address)
-    ).to.be.revertedWith(ERRORS.CALLER_NOT_MARKET_ADMIN);
+    await expectRevert(
+      vault.connect(deployer).withdrawFund(ETH_Address, 1000, deployer.address),
+      ERRORS.CALLER_NOT_MARKET_ADMIN
+    );
 
-    await expect(
-      vault.connect(alice).withdrawFund(ETH_Address, 1000, alice.address)
-    ).to.be.revertedWith(ERRORS.CALLER_NOT_MARKET_ADMIN);
+    await expectRevert(
+      vault.connect(alice).withdrawFund(ETH_Address, 1000, alice.address),
+      ERRORS.CALLER_NOT_MARKET_ADMIN
+    );
 
-    await expect(
-      vault.connect(bob).withdrawFund(ETH_Address, 1000, bob.address)
-    ).to.be.revertedWith(ERRORS.CALLER_NOT_MARKET_ADMIN);
+    await expectRevert(
+      vault.connect(bob).withdrawFund(ETH_Address, 1000, bob.address),
+      ERRORS.CALLER_NOT_MARKET_ADMIN
+    );
   });
 
   it('Vithdraw failed due to insufficient balance', async () => {
-    await expect(
-      vault.connect(marketAdmin).withdrawFund(ETH_Address, 1000, marketAdmin.address)
-    ).to.be.revertedWith(ERRORS.INSUFFICIENT_BALANCE);
+    await expectRevert(
+      vault.connect(marketAdmin).withdrawFund(ETH_Address, 1000, marketAdmin.address),
+      ERRORS.INSUFFICIENT_BALANCE
+    );
   });
 });

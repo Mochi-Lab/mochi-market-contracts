@@ -3,9 +3,12 @@ const { ethers } = require('hardhat');
 async function main() {
   let royaltyNumerator = '20';
   let royaltyDenominator = '100';
-  let feeNumerator = '25';
-  let feeDenominator = '1000';
-  let nativeCoin = 'BNB';
+  let momaToken = '0xffffffffffffffffffffffffffffffffffffffff';
+  let momaFeeNumerator = '1';
+  let momaFeeDenominator = '100';
+  let regularFeeNumerator = '25';
+  let regularFeeDenominator = '1000';
+  let nativeCoin = 'ETH';
 
   let [deployer, marketAdmin] = await ethers.getSigners();
 
@@ -105,8 +108,11 @@ async function main() {
   await marketImpl.deployed();
   initData = marketImpl.interface.encodeFunctionData('initialize', [
     addressesProvider.address,
-    feeNumerator,
-    feeDenominator,
+    momaToken,
+    momaFeeNumerator,
+    momaFeeDenominator,
+    regularFeeNumerator,
+    regularFeeDenominator,
   ]);
   console.log('\nSet Market Implementation...');
   await addressesProvider.connect(deployer).setMarketImpl(marketImpl.address, initData);

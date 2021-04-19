@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity 0.6.12;
+pragma solidity ^0.8.0;
 
-import "../types/DataTypes.sol";
+import "../types/NFTInfoType.sol";
 
 library NFTInfoLogic {
     /**
@@ -12,7 +12,7 @@ library NFTInfoLogic {
      * @param isERC1155 Is that nft erc1155 or not?
      **/
     function register(
-        DataTypes.NFTInfo storage nftInfo,
+        NFTInfoType.NFTInfo storage nftInfo,
         uint256 id,
         address nftAddress,
         bool isERC1155
@@ -28,7 +28,7 @@ library NFTInfoLogic {
      * @dev Admin accepts a nft address so it can trade in the market
      * @param nftInfo nftInfo object
      **/
-    function accept(DataTypes.NFTInfo storage nftInfo) internal {
+    function accept(NFTInfoType.NFTInfo storage nftInfo) internal {
         nftInfo.isAccepted = true;
     }
 
@@ -36,7 +36,7 @@ library NFTInfoLogic {
      * @dev Admin revokdes a nft address
      * @param nftInfo nftInfo object
      **/
-    function revoke(DataTypes.NFTInfo storage nftInfo) internal {
+    function revoke(NFTInfoType.NFTInfo storage nftInfo) internal {
         nftInfo.isAccepted = false;
     }
 }
