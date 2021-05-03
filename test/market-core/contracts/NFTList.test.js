@@ -8,6 +8,7 @@ const {
   allSetup,
   deployTestERC721,
   deployTestERC1155,
+  deployTestERC20,
 } = require('../helpers');
 const { ERRORS } = require('../constans');
 

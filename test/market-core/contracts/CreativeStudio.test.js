@@ -2,7 +2,7 @@
 
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
-const { deployAddressesProvider, allSetup } = require('../helpers');
+const { deployAddressesProvider, allSetup, deployTestERC20 } = require('../helpers');
 const { ERRORS, FEE } = require('../constans');
 
 describe('CreativeStudio', async () => {

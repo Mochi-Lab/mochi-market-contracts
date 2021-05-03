@@ -8,12 +8,14 @@ const {
   deployVaultWithInitData,
   deploySellOrderListWithInitData,
   deployMarketWithInitData,
+  deployTestERC20,
 } = require('../helpers');
 
-const { ERRORS, IDS } = require('../constans');
+const { ERRORS, IDS, MOMA_FEE } = require('../constans');
 
-describe('AddressesProvider', async () => {
+describe.only('AddressesProvider', async () => {
   let addressesProvider, nftListImpl, sellOrderListImpl, vaultImpl, marketImpl;
+  let moma;
   let initData, data;
   let deployer, marketAdmin, user, someAddress;
 
@@ -21,6 +23,8 @@ describe('AddressesProvider', async () => {
     [deployer, marketAdmin, user, someAddress] = await ethers.getSigners();
 
     addressesProvider = await deployAddressesProvider(deployer);
+
+    moma = await deployTestERC20(deployer, 'MOchi MArket Token', 'MOMA');
   });
 
   it('AddressesProvider owner must be deployer', async () => {
@@ -67,7 +71,7 @@ describe('AddressesProvider', async () => {
   });
 
   it('Only onwer can call setMarketImpl', async () => {
-    data = await deployMarketWithInitData(deployer, addressesProvider.address);
+    data = await deployMarketWithInitData(deployer, addressesProvider.address, moma.address);
 
     marketImpl = data.marketImpl;
     initData = data.initData;
@@ -198,13 +202,15 @@ describe('AddressesProvider', async () => {
       expect(await sellOrderListProxy.addressesProvider()).to.equal(addressesProvider.address);
     });
 
-    it('MarketImpl must be set successfully', async () => {
-      data = await deployMarketWithInitData(deployer, addressesProvider.address);
+    it.only('MarketImpl must be set successfully', async () => {
+      data = await deployMarketWithInitData(deployer, addressesProvider.address, moma.address);
 
       marketImpl = data.marketImpl;
       initData = data.initData;
 
-      await addressesProvider.connect(deployer).setMarketImpl(marketImpl.address, initData);
+      await addressesProvider
+        .connect(deployer)
+        .setMarketImpl(marketImpl.address, initData, moma.address);
 
       let marketProxyAddress = await addressesProvider.getMarket();
       let marketProxy = await ethers.getContractAt('Market', marketProxyAddress);
