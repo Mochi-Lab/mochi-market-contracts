@@ -80,8 +80,8 @@ contract CreativeStudio is Initializable, ReentrancyGuard {
     /**
      * @dev Create a new ERC1155 collection
      */
-    function createERC1155Collection(string memory uri) external nonReentrant {
-        address collectionAddress = erc1155Factory.newERC1155Collection(msg.sender, uri);
+    function createERC1155Collection(string memory _name, string memory _symbol, string memory uri) external nonReentrant {
+        address collectionAddress = erc1155Factory.newERC1155Collection(_name, _symbol, msg.sender, uri);
 
         CollectionType.Collection memory newCollection =
             CollectionType.Collection({

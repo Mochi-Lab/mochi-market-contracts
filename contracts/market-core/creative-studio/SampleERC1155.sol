@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 
 /**
  * @dev Contract module which provides a basic access control mechanism, where
@@ -69,17 +68,27 @@ abstract contract Ownable {
 
 // ERC1155
 contract SampleERC1155 is ERC1155, Ownable {
-    using Counters for Counters.Counter;
+    string public name;
+    string public symbol;
+    mapping(uint256 => string) private _tokenURIs;
 
-    constructor(address owner_, string memory uri_) ERC1155(uri_) Ownable(owner_) {}
+    constructor(string memory _name, string memory _symbol, address owner_, string memory uri_)
+        ERC1155(uri_) Ownable(owner_)
+    {
+        name = _name;
+        symbol = _symbol;
+        _setTokenURI(1, uri_);
+    }
 
     function mint(
         address _account,
         uint256 _id,
         uint256 _amount,
+        string memory _uri,
         bytes memory _data
     ) external onlyOwner {
         _mint(_account, _id, _amount, _data);
+        _setTokenURI(_id, _uri);
     }
 
     function mintBatch(
@@ -99,7 +108,19 @@ contract SampleERC1155 is ERC1155, Ownable {
         _burnBatch(msg.sender, ids, amounts);
     }
 
-    function setURI(string memory uri) external onlyOwner {
-        _setURI(uri);
+    function setURI(uint256 _id, string memory _uri) external onlyOwner {
+        _setTokenURI(_id, _uri);
+    }
+
+    function uri(uint256 _id) public override view returns (string memory) {
+        return _tokenURI(_id);
+    }
+
+    function _tokenURI(uint256 tokenId) internal view returns (string memory) {
+        return _tokenURIs[tokenId];
+    }
+
+    function _setTokenURI(uint256 tokenId, string memory _uri) internal {
+        _tokenURIs[tokenId] = _uri;
     }
 }
