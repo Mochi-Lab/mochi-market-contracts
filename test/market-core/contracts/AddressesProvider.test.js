@@ -11,9 +11,9 @@ const {
   deployTestERC20,
 } = require('../helpers');
 
-const { ERRORS, IDS, MOMA_FEE } = require('../constans');
+const { ERRORS, IDS } = require('../constans');
 
-describe.only('AddressesProvider', async () => {
+describe('AddressesProvider', async () => {
   let addressesProvider, nftListImpl, sellOrderListImpl, vaultImpl, marketImpl;
   let moma;
   let initData, data;
@@ -100,7 +100,7 @@ describe.only('AddressesProvider', async () => {
       addressesProvider.connect(user).setAddressAsProxy(IDS.MARKET, someAddress.address, '0x')
     ).to.be.revertedWith(ERRORS.CALLER_NOT_OWNER);
   });
-
+  deployMarketWithInitData;
   context('Caller is AddressesProvider owner', () => {
     it('ADMIN must be set successfully', async () => {
       await addressesProvider.connect(deployer).setAdmin(marketAdmin.address);
@@ -202,15 +202,13 @@ describe.only('AddressesProvider', async () => {
       expect(await sellOrderListProxy.addressesProvider()).to.equal(addressesProvider.address);
     });
 
-    it.only('MarketImpl must be set successfully', async () => {
+    it('MarketImpl must be set successfully', async () => {
       data = await deployMarketWithInitData(deployer, addressesProvider.address, moma.address);
 
       marketImpl = data.marketImpl;
       initData = data.initData;
 
-      await addressesProvider
-        .connect(deployer)
-        .setMarketImpl(marketImpl.address, initData, moma.address);
+      await addressesProvider.connect(deployer).setMarketImpl(marketImpl.address, initData);
 
       let marketProxyAddress = await addressesProvider.getMarket();
       let marketProxy = await ethers.getContractAt('Market', marketProxyAddress);
@@ -218,7 +216,7 @@ describe.only('AddressesProvider', async () => {
     });
 
     it('Call setMarketImpl at second time must be successfully', async () => {
-      data = await deployMarketWithInitData(deployer, addressesProvider.address);
+      data = await deployMarketWithInitData(deployer, addressesProvider.address, moma.address);
 
       marketImpl = data.marketImpl;
       initData = data.initData;
