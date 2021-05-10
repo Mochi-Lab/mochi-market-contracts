@@ -1,18 +1,41 @@
-const { ethers } = require('hardhat');
+const { ethers, network } = require('hardhat');
 
 async function main() {
+  if (
+    network.name != 'bsctestnet' &&
+    network.name != 'onetestnet' &&
+    network.name != 'ropsten' &&
+    network.name != 'rinkeby'
+  ) {
+    throw Error('Invalid network');
+  }
+
   let royaltyNumerator = '20';
   let royaltyDenominator = '100';
-  let momaToken = '0xffffffffffffffffffffffffffffffffffffffff';
+  let momaTokenAddress = '';
   let momaFeeNumerator = '1';
   let momaFeeDenominator = '100';
   let regularFeeNumerator = '25';
   let regularFeeDenominator = '1000';
   let nativeCoin = 'ETH';
+  let tx;
 
   let [deployer, marketAdmin] = await ethers.getSigners();
 
   console.log('Deploying contracts with the account:', deployer.address);
+
+  if (network.name === 'rinkeby') {
+    momaTokenAddress = '0xFF02166F7ef6F03b18fB7c6e23d30430202Ef9A2';
+  }
+
+  if (momaTokenAddress === '' || momaTokenAddress === undefined) {
+    console.log('\nDeploy MOMA BSC testnet');
+    let TestERC20 = await ethers.getContractFactory('TestERC20');
+    let momaToken = await TestERC20.connect(deployer).deploy('MOchi MArket Token', 'MOMA');
+
+    await momaToken.deployed();
+    momaTokenAddress = momaToken.address;
+  }
 
   // Deploy AddressesProvider contract
   console.log('\nDeploying AddressesProvider...');
@@ -21,7 +44,8 @@ async function main() {
   await addressesProvider.deployed();
   // SetAdmin
   console.log('\nSet Market Admin...');
-  await addressesProvider.connect(deployer).setAdmin(marketAdmin.address);
+  tx = await addressesProvider.connect(deployer).setAdmin(marketAdmin.address);
+  await tx.wait();
 
   // Deploy NFTList contract
   console.log('\nDeploying NFTList...');
@@ -32,7 +56,8 @@ async function main() {
     addressesProvider.address,
   ]);
   console.log('\nSet NFTList Implementation...');
-  await addressesProvider.connect(deployer).setNFTListImpl(nftListImpl.address, initData);
+  tx = await addressesProvider.connect(deployer).setNFTListImpl(nftListImpl.address, initData);
+  await tx.wait();
 
   // Deploy Vault contract
   console.log('\nDeploying Vault...');
@@ -46,7 +71,8 @@ async function main() {
     nativeCoin,
   ]);
   console.log('\nSet Vault Implementation...');
-  await addressesProvider.connect(deployer).setVaultImpl(vaultImpl.address, initData);
+  tx = await addressesProvider.connect(deployer).setVaultImpl(vaultImpl.address, initData);
+  await tx.wait();
 
   // Deploy SellOrderList contract
   console.log('\nDeploying SellOrderListContract...');
@@ -57,11 +83,12 @@ async function main() {
     addressesProvider.address,
   ]);
   console.log('\nSet SellOrderListContract Implementation...');
-  await addressesProvider
+  tx = await addressesProvider
     .connect(deployer)
     .setSellOrderListImpl(sellOrderListImpl.address, initData, {
       gasLimit: 6721975,
     });
+  await tx.wait();
 
   // Deploy ExchangeOrderList contract
   console.log('\nDeploying ExchangeOrderList...');
@@ -72,11 +99,12 @@ async function main() {
     addressesProvider.address,
   ]);
   console.log('\nSet ExchangeOrderList Implementation...');
-  await addressesProvider
+  tx = await addressesProvider
     .connect(deployer)
     .setExchangeOrderListImpl(exchangeOrderListImpl.address, initData, {
       gasLimit: 6721975,
     });
+  await tx.wait();
 
   // Deploy CreativeStudio contract
   console.log('\nDeploying CreativeStudio...');
@@ -95,11 +123,12 @@ async function main() {
     erc1155Factory.address,
   ]);
   console.log('\nSet CreativeStudio Implementation...');
-  await addressesProvider
+  tx = await addressesProvider
     .connect(deployer)
     .setCreativeStudioImpl(creativeStudioImpl.address, initData, {
       gasLimit: 6721975,
     });
+  await tx.wait();
 
   // Deploy Market contract
   console.log('\nDeploying Market...');
@@ -108,19 +137,24 @@ async function main() {
   await marketImpl.deployed();
   initData = marketImpl.interface.encodeFunctionData('initialize', [
     addressesProvider.address,
-    momaToken,
+    momaTokenAddress,
     momaFeeNumerator,
     momaFeeDenominator,
     regularFeeNumerator,
     regularFeeDenominator,
   ]);
   console.log('\nSet Market Implementation...');
-  await addressesProvider.connect(deployer).setMarketImpl(marketImpl.address, initData);
+  tx = await addressesProvider.connect(deployer).setMarketImpl(marketImpl.address, initData);
+  await tx.wait();
 
   console.log('\nDeploy Mochi NFT...');
-  let MochiNFT = await ethers.getContractFactory('MochiNFT');
-  let mochiNFT = await MochiNFT.connect(deployer).deploy();
-  await mochiNFT.deployed();
+  let MochiERC721NFT = await ethers.getContractFactory('MochiERC721NFT');
+  let mochiERC721NFT = await MochiERC721NFT.connect(deployer).deploy();
+  await mochiERC721NFT.deployed();
+
+  let MochiERC1155NFT = await ethers.getContractFactory('MochiERC1155NFT');
+  let mochiERC1155NFT = await MochiERC1155NFT.connect(deployer).deploy();
+  await mochiERC1155NFT.deployed();
 
   let nftListAddress = await addressesProvider.getNFTList();
   let vaultAddress = await addressesProvider.getVault();
@@ -131,9 +165,15 @@ async function main() {
 
   let nftList = await ethers.getContractAt('NFTList', nftListAddress);
   console.log('\nRegister Mochi NFT...');
-  await nftList.connect(marketAdmin).registerNFT(mochiNFT.address, false);
+  tx = await nftList.connect(marketAdmin).registerNFT(mochiERC721NFT.address, false);
+  await tx.wait();
+  tx = await nftList.connect(marketAdmin).registerNFT(mochiERC1155NFT.address, true);
+  await tx.wait();
   console.log('\nAccept Mochi NFT...');
-  await nftList.connect(marketAdmin).acceptNFT(mochiNFT.address);
+  tx = await nftList.connect(marketAdmin).acceptNFT(mochiERC721NFT.address);
+  await tx.wait();
+  tx = await nftList.connect(marketAdmin).acceptNFT(mochiERC1155NFT.address);
+  await tx.wait();
   console.log('\n\n\nResult\n\n');
   console.log('AddressesProvider: ', addressesProvider.address);
   console.log('NFTList: ', nftListAddress);
@@ -142,7 +182,8 @@ async function main() {
   console.log('ExchangeOrderList: ', exchangeOrderListAddress);
   console.log('CreativeStudio: ', creativeStudioAddress);
   console.log('Market: ', marketAddress);
-  console.log('Mochi NFT: ', mochiNFT.address);
+  console.log('Mochi ERC721 NFT: ', mochiERC721NFT.address);
+  console.log('Mochi ERC1155 NFT: ', mochiERC1155NFT.address);
   console.log('Admin: ', marketAdmin.address);
 }
 

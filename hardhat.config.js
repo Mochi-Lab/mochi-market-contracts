@@ -49,6 +49,14 @@ module.exports = {
       ],
       gasLimit: '6721975',
     },
+    rinkeby: {
+      url: `https://rinkeby.infura.io/v3/${process.env.INFURA_KEY}`,
+      accounts: [
+        process.env.ROPSTEN_DEPLOYER_PRIVATE_KEY,
+        process.env.ROPSTEN_MARKET_ADMIN_PRIVATE_KEY,
+      ],
+      gasLimit: '6721975',
+    },
   },
 
   gas: 40000000,
