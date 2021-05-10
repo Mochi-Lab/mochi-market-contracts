@@ -16,10 +16,9 @@ contract ERC721Factory {
     function newERC721Collection(
         address owner,
         string memory name,
-        string memory symbol,
-        string memory baseUri
+        string memory symbol
     ) external returns (address) {
-        address collectionAddress = address(new SampleERC721(owner, name, symbol, baseUri));
+        address collectionAddress = address(new SampleERC721(owner, name, symbol));
 
         return collectionAddress;
     }

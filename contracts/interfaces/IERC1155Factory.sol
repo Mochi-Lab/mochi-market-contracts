@@ -7,5 +7,9 @@ pragma solidity ^0.8.0;
  * @author MochiLab
  **/
 interface IERC1155Factory {
-    function newERC1155Collection(address owner, string memory uri) external returns (address);
+    function newERC1155Collection(
+        address owner,
+        string memory name,
+        string memory symbol
+    ) external returns (address);
 }

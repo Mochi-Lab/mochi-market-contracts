@@ -2,7 +2,7 @@
 
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
-const { deployAddressesProvider, allSetup } = require('../helpers');
+const { deployAddressesProvider, allSetup, deployTestERC20 } = require('../helpers');
 const { ERRORS, FEE } = require('../constans');
 
 describe('CreativeStudio', async () => {
@@ -29,9 +29,7 @@ describe('CreativeStudio', async () => {
   });
 
   it('Create collection successfully', async () => {
-    await creativeStudioProxy
-      .connect(alice)
-      .createERC721Collection('Alice Collection', 'AC', 'Alice Uri');
+    await creativeStudioProxy.connect(alice).createERC721Collection('Alice Collection', 'AC');
 
     let aliceCollections = await creativeStudioProxy.getCollectionsByUser(alice.address);
 

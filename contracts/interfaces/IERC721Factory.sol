@@ -10,7 +10,6 @@ interface IERC721Factory {
     function newERC721Collection(
         address owner,
         string memory name,
-        string memory symbol,
-        string memory baseUri
+        string memory symbol
     ) external returns (address);
 }

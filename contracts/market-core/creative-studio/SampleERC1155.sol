@@ -70,25 +70,46 @@ abstract contract Ownable {
 // ERC1155
 contract SampleERC1155 is ERC1155, Ownable {
     using Counters for Counters.Counter;
+    string public name;
+    string public symbol;
+    mapping(uint256 => string) internal _tokenUri;
 
-    constructor(address owner_, string memory uri_) ERC1155(uri_) Ownable(owner_) {}
+    constructor(
+        address owner,
+        string memory _name,
+        string memory _symbol
+    ) ERC1155("") Ownable(owner) {
+        name = _name;
+        symbol = _symbol;
+    }
 
     function mint(
-        address _account,
-        uint256 _id,
-        uint256 _amount,
-        bytes memory _data
+        address account,
+        uint256 id,
+        uint256 amount,
+        string memory tokenUri,
+        bytes memory data
     ) external onlyOwner {
-        _mint(_account, _id, _amount, _data);
+        _mint(account, id, amount, data);
+        _tokenUri[id] = tokenUri;
     }
 
     function mintBatch(
-        address to,
+        address _to,
         uint256[] memory ids,
         uint256[] memory amounts,
+        string[] memory _tokensUri,
         bytes memory data
     ) external onlyOwner {
-        _mintBatch(to, ids, amounts, data);
+        require(
+            amounts.length == _tokensUri.length,
+            "ERC1155: amounts and tokensUri length mismatch"
+        );
+        _mintBatch(_to, ids, amounts, data);
+
+        for (uint256 i = 0; i < ids.length; i++) {
+            _tokenUri[ids[i]] = _tokensUri[i];
+        }
     }
 
     function burn(uint256 id, uint256 amount) external {
@@ -99,7 +120,11 @@ contract SampleERC1155 is ERC1155, Ownable {
         _burnBatch(msg.sender, ids, amounts);
     }
 
-    function setURI(string memory uri) external onlyOwner {
-        _setURI(uri);
+    function setUri(uint256 id, string memory tokenUri) external onlyOwner {
+        _tokenUri[id] = tokenUri;
+    }
+
+    function uri(uint256 id) public view override returns (string memory) {
+        return _tokenUri[id];
     }
 }

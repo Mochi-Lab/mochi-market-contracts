@@ -70,41 +70,15 @@ abstract contract Ownable {
 // ERC721 has an auto-incremental tokenId that cannot be burned
 contract SampleERC721 is ERC721, Ownable {
     using Counters for Counters.Counter;
-    string private _baseUri;
-    mapping(uint256 => string) private _tokenUris;
 
     Counters.Counter private _tokenIds;
+    mapping(uint256 => string) private _tokenUri;
 
     constructor(
         address owner,
         string memory name,
-        string memory symbol,
-        string memory baseUri
-    ) ERC721(name, symbol) Ownable(owner) {
-        _setBaseURI(baseUri);
-    }
-
-    function _setBaseURI(string memory baseUri) internal {
-        _baseUri = baseUri;
-    }
-
-    function _baseURI() internal view override returns (string memory) {
-        return _baseUri;
-    }
-
-    function baseURI() external view returns (string memory) {
-        return _baseURI();
-    }
-
-    function _setTokenURI(uint256 tokenId, string memory _tokenURI) internal virtual {
-        require(_exists(tokenId), "ERC721Metadata: URI set of nonexistent token");
-        _tokenUris[tokenId] = _tokenURI;
-    }
-
-    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-        require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
-        return _tokenUris[tokenId];
-    }
+        string memory symbol
+    ) ERC721(name, symbol) Ownable(owner) {}
 
     function mint(
         address to,
@@ -113,21 +87,23 @@ contract SampleERC721 is ERC721, Ownable {
     ) external onlyOwner returns (uint256) {
         _tokenIds.increment();
 
-        uint256 newNftTokenId = _tokenIds.current();
+        uint256 newTokenId = _tokenIds.current();
 
-        _safeMint(to, newNftTokenId, data);
+        _safeMint(to, newTokenId, data);
 
-        _setTokenURI(newNftTokenId, tokenUri);
+        _tokenUri[newTokenId] = tokenUri;
 
-        return newNftTokenId;
+        return newTokenId;
     }
 
-    function setBaseURI(string memory baseUri) external onlyOwner {
-        _setBaseURI(baseUri);
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
+        return _tokenUri[tokenId];
     }
 
     function setTokenURI(uint256 tokenId, string memory tokenUri) external onlyOwner {
-        _setTokenURI(tokenId, tokenUri);
+        require(_exists(tokenId), "ERC721Metadata: URI set of nonexistent token");
+        _tokenUri[tokenId] = tokenUri;
     }
 
     function currentTokenId() public view returns (uint256) {

@@ -8,12 +8,14 @@ const {
   deployVaultWithInitData,
   deploySellOrderListWithInitData,
   deployMarketWithInitData,
+  deployTestERC20,
 } = require('../helpers');
 
 const { ERRORS, IDS } = require('../constans');
 
 describe('AddressesProvider', async () => {
   let addressesProvider, nftListImpl, sellOrderListImpl, vaultImpl, marketImpl;
+  let moma;
   let initData, data;
   let deployer, marketAdmin, user, someAddress;
 
@@ -21,6 +23,8 @@ describe('AddressesProvider', async () => {
     [deployer, marketAdmin, user, someAddress] = await ethers.getSigners();
 
     addressesProvider = await deployAddressesProvider(deployer);
+
+    moma = await deployTestERC20(deployer, 'MOchi MArket Token', 'MOMA');
   });
 
   it('AddressesProvider owner must be deployer', async () => {
@@ -67,7 +71,7 @@ describe('AddressesProvider', async () => {
   });
 
   it('Only onwer can call setMarketImpl', async () => {
-    data = await deployMarketWithInitData(deployer, addressesProvider.address);
+    data = await deployMarketWithInitData(deployer, addressesProvider.address, moma.address);
 
     marketImpl = data.marketImpl;
     initData = data.initData;
@@ -96,7 +100,7 @@ describe('AddressesProvider', async () => {
       addressesProvider.connect(user).setAddressAsProxy(IDS.MARKET, someAddress.address, '0x')
     ).to.be.revertedWith(ERRORS.CALLER_NOT_OWNER);
   });
-
+  deployMarketWithInitData;
   context('Caller is AddressesProvider owner', () => {
     it('ADMIN must be set successfully', async () => {
       await addressesProvider.connect(deployer).setAdmin(marketAdmin.address);
@@ -199,7 +203,7 @@ describe('AddressesProvider', async () => {
     });
 
     it('MarketImpl must be set successfully', async () => {
-      data = await deployMarketWithInitData(deployer, addressesProvider.address);
+      data = await deployMarketWithInitData(deployer, addressesProvider.address, moma.address);
 
       marketImpl = data.marketImpl;
       initData = data.initData;
@@ -212,7 +216,7 @@ describe('AddressesProvider', async () => {
     });
 
     it('Call setMarketImpl at second time must be successfully', async () => {
-      data = await deployMarketWithInitData(deployer, addressesProvider.address);
+      data = await deployMarketWithInitData(deployer, addressesProvider.address, moma.address);
 
       marketImpl = data.marketImpl;
       initData = data.initData;
