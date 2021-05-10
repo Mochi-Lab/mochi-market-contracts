@@ -21,7 +21,8 @@
     "deploy-localhost": "npx hardhat run scripts/deploy.js --network localhost",
     "deploy-bsc-testnet": "npx hardhat run scripts/deploy.js --network bsctestnet",
     "deploy-one-testnet": "npx hardhat run scripts/deploy.js --network onetestnet",
-    "deploy-ropsten": "npx hardhat run scripts/deploy.js --network ropsten"
+    "deploy-ropsten": "npx hardhat run scripts/deploy.js --network ropsten",
+    "deploy-rinkeby": "npx hardhat run scripts/deploy.js --network rinkeby"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-web3": "^2.0.0",
