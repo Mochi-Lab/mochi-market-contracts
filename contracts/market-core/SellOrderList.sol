@@ -108,15 +108,8 @@ contract SellOrderList is Initializable {
         address token
     ) external onlyMarket {
         uint256 sellId = _sellOrders.length;
-        SellOrderType.SellOrder memory sellOrder = SellOrderLogic.newSellOrder(
-            sellId,
-            nftAddress,
-            tokenId,
-            amount,
-            seller,
-            price,
-            token
-        );
+        SellOrderType.SellOrder memory sellOrder =
+            SellOrderLogic.newSellOrder(sellId, nftAddress, tokenId, amount, seller, price, token);
 
         _addSellOrderToList(sellOrder);
 
@@ -195,14 +188,6 @@ contract SellOrderList is Initializable {
         }
     }
 
-    // /**
-    //  * @dev Get all sell orders
-    //  * @return Information of all sell orders
-    //  */
-    // function getAllSellOrders() external view returns (SellOrderType.SellOrder[] memory) {
-    //     return _sellOrders;
-    // }
-
     /**
      * @dev Get the number of sell order
      * @return The number of sell order
@@ -210,30 +195,6 @@ contract SellOrderList is Initializable {
     function getSellOrderCount() external view returns (uint256) {
         return _sellOrders.length;
     }
-
-    // /**
-    //  * @dev Get available sell orders
-    //  */
-    // function getAvailableSellOrders()
-    //     external
-    //     view
-    //     returns (
-    //         SellOrderType.SellOrder[] memory resultERC721,
-    //         SellOrderType.SellOrder[] memory resultERC1155
-    //     )
-    // {
-    //     resultERC721 = new SellOrderType.SellOrder[](_availableSellOrdersERC721.length);
-
-    //     for (uint256 i = 0; i < _availableSellOrdersERC721.length; i++) {
-    //         resultERC721[i] = _sellOrders[_availableSellOrdersERC721[i]];
-    //     }
-
-    //     resultERC1155 = new SellOrderType.SellOrder[](_availableSellOrdersERC1155.length);
-
-    //     for (uint256 i = 0; i < _availableSellOrdersERC1155.length; i++) {
-    //         resultERC1155[i] = _sellOrders[_availableSellOrdersERC1155[i]];
-    //     }
-    // }
 
     /**
      * @dev Get list of id of available sell orders
@@ -256,21 +217,6 @@ contract SellOrderList is Initializable {
         }
     }
 
-    // /**
-    //  * @dev Get sell orders created by a user
-    //  */
-    // function getAllSellOrdersByUser(address user)
-    //     external
-    //     view
-    //     returns (SellOrderType.SellOrder[] memory result)
-    // {
-    //     result = new SellOrderType.SellOrder[](_sellerToOrders[user].length);
-
-    //     for (uint256 i = 0; i < _sellerToOrders[user].length; i++) {
-    //         result[i] = _sellOrders[_sellerToOrders[user][i]];
-    //     }
-    // }
-
     /**
      * @dev Get list of id of sell orders of a user
      */
@@ -285,28 +231,6 @@ contract SellOrderList is Initializable {
             result[i] = _sellerToOrders[user][i];
         }
     }
-
-    // /**
-    //  * @dev Get available sell orders of a user
-    //  */
-    // function getAvailableSellOrdersByUser(address user)
-    //     external
-    //     view
-    //     returns (
-    //         SellOrderType.SellOrder[] memory resultERC721,
-    //         SellOrderType.SellOrder[] memory resultERC1155
-    //     )
-    // {
-    //     resultERC721 = new SellOrderType.SellOrder[](_sellerToAvailableOrdersERC721[user].length);
-    //     for (uint256 i = 0; i < _sellerToAvailableOrdersERC721[user].length; i++) {
-    //         resultERC721[i] = _sellOrders[_sellerToAvailableOrdersERC721[user][i]];
-    //     }
-
-    //     resultERC1155 = new SellOrderType.SellOrder[](_sellerToAvailableOrdersERC1155[user].length);
-    //     for (uint256 i = 0; i < _sellerToAvailableOrdersERC1155[user].length; i++) {
-    //         resultERC1155[i] = _sellOrders[_sellerToAvailableOrdersERC1155[user][i]];
-    //     }
-    // }
 
     /**
      * @dev Get list of id of available sell orders of a user
@@ -327,21 +251,6 @@ contract SellOrderList is Initializable {
         }
     }
 
-    // /**
-    //  * @dev Get sell orders of a nft address
-    //  */
-    // function getAllSellOrdersByNftAddress(address nftAddress)
-    //     external
-    //     view
-    //     returns (SellOrderType.SellOrder[] memory result)
-    // {
-    //     result = new SellOrderType.SellOrder[](_nftToOrders[nftAddress].length);
-
-    //     for (uint256 i = 0; i < _nftToOrders[nftAddress].length; i++) {
-    //         result[i] = _sellOrders[_nftToOrders[nftAddress][i]];
-    //     }
-    // }
-
     /**
      * @dev Get list of id of sell orders of a nft address
      */
@@ -357,21 +266,6 @@ contract SellOrderList is Initializable {
         }
     }
 
-    // /**
-    //  * @dev Get availables sell orders of a nft address
-    //  */
-    // function getAvailableSellOrdersByNftAddress(address nftAddress)
-    //     external
-    //     view
-    //     returns (SellOrderType.SellOrder[] memory result)
-    // {
-    //     result = new SellOrderType.SellOrder[](_nftToAvailableOrders[nftAddress].length);
-
-    //     for (uint256 i = 0; i < _nftToAvailableOrders[nftAddress].length; i++) {
-    //         result[i] = _sellOrders[_nftToAvailableOrders[nftAddress][i]];
-    //     }
-    // }
-
     /**
      * @dev Get list of id of available sell orders of a nft address
      */
@@ -386,21 +280,6 @@ contract SellOrderList is Initializable {
             result[i] = _nftToAvailableOrders[nftAddress][i];
         }
     }
-
-    // /**
-    //  * @dev Get sell orders was purchased by a user
-    //  */
-    // function getSellOrdersBoughtByUser(address user)
-    //     external
-    //     view
-    //     returns (SellOrderType.SellOrder[] memory result)
-    // {
-    //     result = new SellOrderType.SellOrder[](_buyerToSellOrders[user].length);
-
-    //     for (uint256 i = 0; i < _buyerToSellOrders[user].length; i++) {
-    //         result[i] = _sellOrders[_buyerToSellOrders[user][i]];
-    //     }
-    // }
 
     /**
      * @dev Get list of id of sell orders was purchased by a user
@@ -536,8 +415,9 @@ contract SellOrderList is Initializable {
         if (nftList.isERC1155(sellOrder.nftAddress) == true) {
             _availableSellOrdersERC1155.push(sellId);
             _sellerToAvailableOrdersERC1155[sellOrder.seller].push(sellId);
-            _inforToSellIdERC1155[sellOrder.seller][sellOrder.nftAddress][sellOrder
-                .tokenId] = sellId;
+            _inforToSellIdERC1155[sellOrder.seller][sellOrder.nftAddress][
+                sellOrder.tokenId
+            ] = sellId;
         } else {
             _availableSellOrdersERC721.push(sellId);
             _sellerToAvailableOrdersERC721[sellOrder.seller].push(sellId);

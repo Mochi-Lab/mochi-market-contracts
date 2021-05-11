@@ -29,7 +29,7 @@ async function main() {
   }
 
   if (momaTokenAddress === '' || momaTokenAddress === undefined) {
-    console.log('\nDeploy MOMA BSC testnet');
+    console.log('\nDeploy MOMA');
     let TestERC20 = await ethers.getContractFactory('TestERC20');
     let momaToken = await TestERC20.connect(deployer).deploy('MOchi MArket Token', 'MOMA');
 
@@ -184,7 +184,8 @@ async function main() {
   console.log('Market: ', marketAddress);
   console.log('Mochi ERC721 NFT: ', mochiERC721NFT.address);
   console.log('Mochi ERC1155 NFT: ', mochiERC1155NFT.address);
-  console.log('Admin: ', marketAdmin.address);
+  console.log('MOMA Token: ', momaTokenAddress);
+  console.log('Market Admin: ', marketAdmin.address);
 }
 
 main()
