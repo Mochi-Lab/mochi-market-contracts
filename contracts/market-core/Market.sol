@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "../libraries/helpers/MarketErrors.sol";
 import "../interfaces/IVault.sol";
@@ -21,6 +21,8 @@ import "../interfaces/mini-interfaces/MiniIAddressesProvider.sol";
  * @author MochiLab
  **/
 contract Market is Initializable, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
     uint256 public constant SAFE_NUMBER = 1e12;
     MiniIAddressesProvider public addressesProvider;
     MiniINFTList public nftList;
@@ -180,6 +182,7 @@ contract Market is Initializable, ReentrancyGuard {
                 MarketErrors.SELL_ORDER_DUPLICATE
             );
         }
+
         sellOrderList.addSellOrder(nftAddress, tokenId, amount, payable(msg.sender), price, token);
     }
 
@@ -217,51 +220,23 @@ contract Market is Initializable, ReentrancyGuard {
             amount <= sellOrder.amount - sellOrder.soldAmount,
             MarketErrors.AMOUNT_IS_NOT_ENOUGH
         );
-        uint256 price = amount * sellOrder.price;
-        uint256 fee = _calculateFee(sellOrder.token, price);
+        uint256 amountToken = amount * sellOrder.price;
 
-        if (sellOrder.token == address(0)) {
-            require(msg.value == price, MarketErrors.VALUE_NOT_EQUAL_PRICE);
-            sellOrder.seller.transfer(price - fee);
-            if (fee > 0) {
-                vault.deposit{value: fee}(
-                    sellOrder.nftAddress,
-                    sellOrder.seller,
-                    msg.sender,
-                    sellOrder.token,
-                    fee
-                );
-            }
-        } else {
-            IERC20(sellOrder.token).transferFrom(msg.sender, address(this), price);
-            IERC20(sellOrder.token).transfer(sellOrder.seller, price - fee);
-            if (fee > 0) {
-                vault.deposit(
-                    sellOrder.nftAddress,
-                    sellOrder.seller,
-                    msg.sender,
-                    sellOrder.token,
-                    fee
-                );
-            }
-        }
+        _transferAndDepositMoney(
+            sellOrder.token,
+            amountToken,
+            sellOrder.seller,
+            sellOrder.nftAddress
+        );
 
-        if (nftList.isERC1155(sellOrder.nftAddress) == true) {
-            IERC1155(sellOrder.nftAddress).safeTransferFrom(
-                sellOrder.seller,
-                receiver,
-                sellOrder.tokenId,
-                amount,
-                data
-            );
-        } else {
-            IERC721(sellOrder.nftAddress).safeTransferFrom(
-                sellOrder.seller,
-                receiver,
-                sellOrder.tokenId,
-                data
-            );
-        }
+        _transferAsset(
+            sellOrder.nftAddress,
+            sellOrder.tokenId,
+            amount,
+            sellOrder.seller,
+            receiver,
+            data
+        );
 
         sellOrderList.completeSellOrder(sellId, msg.sender, amount);
     }
@@ -396,99 +371,32 @@ contract Market is Initializable, ReentrancyGuard {
             destinationId > 0 && destinationId < exchangeOrder.nftAddresses.length,
             MarketErrors.INVALID_DESTINATION
         );
-        if (nftList.isERC1155(exchangeOrder.nftAddresses[destinationId]) == true) {
-            require(
-                IERC1155(exchangeOrder.nftAddresses[destinationId]).balanceOf(
-                    msg.sender,
-                    exchangeOrder.tokenIds[destinationId]
-                ) >= exchangeOrder.nftAmounts[destinationId],
-                MarketErrors.INSUFFICIENT_BALANCE
-            );
-            require(
-                IERC1155(exchangeOrder.nftAddresses[destinationId]).isApprovedForAll(
-                    msg.sender,
-                    address(this)
-                ),
-                MarketErrors.NFT_NOT_APPROVED_FOR_MARKET
-            );
-            IERC1155(exchangeOrder.nftAddresses[destinationId]).safeTransferFrom(
-                msg.sender,
-                exchangeOrder.users[0],
-                exchangeOrder.tokenIds[destinationId],
-                exchangeOrder.nftAmounts[destinationId],
-                exchangeOrder.data[destinationId]
-            );
-        } else {
-            require(
-                IERC721(exchangeOrder.nftAddresses[destinationId]).getApproved(
-                    exchangeOrder.tokenIds[destinationId]
-                ) == address(this),
-                MarketErrors.NFT_NOT_APPROVED_FOR_MARKET
-            );
-            require(
-                IERC721(exchangeOrder.nftAddresses[destinationId]).ownerOf(
-                    exchangeOrder.tokenIds[destinationId]
-                ) == msg.sender,
-                MarketErrors.CALLER_NOT_NFT_OWNER
-            );
-            IERC721(exchangeOrder.nftAddresses[destinationId]).safeTransferFrom(
-                msg.sender,
-                exchangeOrder.users[0],
-                exchangeOrder.tokenIds[destinationId]
-            );
-        }
-        if (nftList.isERC1155(exchangeOrder.nftAddresses[0]) == true) {
-            IERC1155(exchangeOrder.nftAddresses[0]).safeTransferFrom(
-                exchangeOrder.users[0],
-                receiver,
-                exchangeOrder.tokenIds[0],
-                exchangeOrder.nftAmounts[0],
-                data
-            );
-        } else {
-            IERC721(exchangeOrder.nftAddresses[0]).safeTransferFrom(
-                exchangeOrder.users[0],
-                receiver,
-                exchangeOrder.tokenIds[0]
-            );
-        }
-        uint256 fee =
-            _calculateFee(exchangeOrder.tokens[destinationId], exchangeOrder.prices[destinationId]);
-        if (exchangeOrder.tokens[destinationId] == address(0)) {
-            require(
-                msg.value == exchangeOrder.prices[destinationId],
-                MarketErrors.VALUE_NOT_EQUAL_PRICE
-            );
-            payable(exchangeOrder.users[0]).transfer(exchangeOrder.prices[destinationId] - fee);
-            if (fee > 0) {
-                vault.deposit{value: fee}(
-                    exchangeOrder.nftAddresses[0],
-                    exchangeOrder.users[0],
-                    msg.sender,
-                    exchangeOrder.tokens[destinationId],
-                    fee
-                );
-            }
-        } else {
-            IERC20(exchangeOrder.tokens[destinationId]).transferFrom(
-                msg.sender,
-                address(this),
-                exchangeOrder.prices[destinationId]
-            );
-            IERC20(exchangeOrder.tokens[destinationId]).transfer(
-                exchangeOrder.users[0],
-                exchangeOrder.prices[destinationId] - fee
-            );
-            if (fee > 0) {
-                vault.deposit(
-                    exchangeOrder.nftAddresses[0],
-                    exchangeOrder.users[0],
-                    msg.sender,
-                    exchangeOrder.tokens[destinationId],
-                    fee
-                );
-            }
-        }
+
+        _transferAndDepositMoney(
+            exchangeOrder.tokens[destinationId],
+            exchangeOrder.prices[destinationId],
+            exchangeOrder.users[0],
+            exchangeOrder.nftAddresses[0]
+        );
+
+        _transferAsset(
+            exchangeOrder.nftAddresses[destinationId],
+            exchangeOrder.tokenIds[destinationId],
+            exchangeOrder.nftAmounts[destinationId],
+            msg.sender,
+            exchangeOrder.users[0],
+            exchangeOrder.data[destinationId]
+        );
+
+        _transferAsset(
+            exchangeOrder.nftAddresses[0],
+            exchangeOrder.tokenIds[0],
+            exchangeOrder.nftAmounts[0],
+            exchangeOrder.users[0],
+            receiver,
+            data
+        );
+
         exchangeOrderList.completeExchangeOrder(exchangeId, destinationId, msg.sender);
     }
 
@@ -523,6 +431,46 @@ contract Market is Initializable, ReentrancyGuard {
             fee =
                 ((price * SAFE_NUMBER * _regularFeeNumerator) / _regularFeeDenominator) /
                 SAFE_NUMBER;
+        }
+    }
+
+    function _transferAndDepositMoney(
+        address token,
+        uint256 amount,
+        address seller,
+        address nftAddress
+    ) internal {
+        uint256 fee = _calculateFee(token, amount);
+
+        if (token == address(0)) {
+            require(msg.value == amount, MarketErrors.VALUE_NOT_EQUAL_PRICE);
+            payable(seller).transfer(amount - fee);
+
+            if (fee > 0) {
+                vault.deposit{value: fee}(nftAddress, seller, msg.sender, token, fee);
+            }
+        } else {
+            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+            IERC20(token).safeTransfer(seller, amount - fee);
+
+            if (fee > 0) {
+                vault.deposit(nftAddress, seller, msg.sender, token, fee);
+            }
+        }
+    }
+
+    function _transferAsset(
+        address nftAddress,
+        uint256 tokenId,
+        uint256 amount,
+        address from,
+        address to,
+        bytes memory data
+    ) internal {
+        if (nftList.isERC1155(nftAddress) == true) {
+            IERC1155(nftAddress).safeTransferFrom(from, to, tokenId, amount, data);
+        } else {
+            IERC721(nftAddress).safeTransferFrom(from, to, tokenId, data);
         }
     }
 }

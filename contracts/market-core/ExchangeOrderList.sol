@@ -120,17 +120,18 @@ contract ExchangeOrderList is Initializable {
 
         uint256[] memory times;
 
-        ExchangeOrderType.ExchangeOrder memory order = ExchangeOrderLogic.newExchangeOrder(
-            exchangeId,
-            nftAddresses,
-            tokenIds,
-            nftAmounts,
-            tokens,
-            prices,
-            users,
-            times,
-            datas
-        );
+        ExchangeOrderType.ExchangeOrder memory order =
+            ExchangeOrderLogic.newExchangeOrder(
+                exchangeId,
+                nftAddresses,
+                tokenIds,
+                nftAmounts,
+                tokens,
+                prices,
+                users,
+                times,
+                datas
+            );
 
         _exchangeOrders.push(order);
         _exchangeOrders[exchangeId].addTimestamp(block.timestamp);
@@ -207,18 +208,6 @@ contract ExchangeOrderList is Initializable {
         }
     }
 
-    // /**
-    //  * @dev Get all exchange order
-    //  * @return Information of all exchange orders
-    //  */
-    // function getAllExchangeOrders()
-    //     external
-    //     view
-    //     returns (ExchangeOrderType.ExchangeOrder[] memory)
-    // {
-    //     return _exchangeOrders;
-    // }
-
     /**
      * @dev Get the number of exchange orders
      * @return The number of exchange orders
@@ -226,32 +215,6 @@ contract ExchangeOrderList is Initializable {
     function getExchangeOrderCount() external view returns (uint256) {
         return _exchangeOrders.length;
     }
-
-    // /**
-    //  * @dev Get available exchange orders
-    //  */
-    // function getAvailableExchangeOrders()
-    //     external
-    //     view
-    //     returns (
-    //         ExchangeOrderType.ExchangeOrder[] memory resultERC721,
-    //         ExchangeOrderType.ExchangeOrder[] memory resultERC1155
-    //     )
-    // {
-    //     resultERC721 = new ExchangeOrderType.ExchangeOrder[](_availableExchangeOrdersERC721.length);
-
-    //     for (uint256 i = 0; i < _availableExchangeOrdersERC721.length; i++) {
-    //         resultERC721[i] = _exchangeOrders[_availableExchangeOrdersERC721[i]];
-    //     }
-
-    //     resultERC1155 = new ExchangeOrderType.ExchangeOrder[](
-    //         _availableExchangeOrdersERC1155.length
-    //     );
-
-    //     for (uint256 i = 0; i < _availableExchangeOrdersERC1155.length; i++) {
-    //         resultERC1155[i] = _exchangeOrders[_availableExchangeOrdersERC1155[i]];
-    //     }
-    // }
 
     /**
      * @dev Get list of id of available exchange orders
@@ -274,21 +237,6 @@ contract ExchangeOrderList is Initializable {
         }
     }
 
-    // /**
-    //  * @dev Get exchanges orders of a user
-    //  */
-    // function getAllExchangeOrdersByUser(address user)
-    //     external
-    //     view
-    //     returns (ExchangeOrderType.ExchangeOrder[] memory result)
-    // {
-    //     result = new ExchangeOrderType.ExchangeOrder[](_sellerToOrders[user].length);
-
-    //     for (uint256 i = 0; i < _sellerToOrders[user].length; i++) {
-    //         result[i] = _exchangeOrders[_sellerToOrders[user][i]];
-    //     }
-    // }
-
     /**
      * @dev Get list of ids of the exchange orders of a user
      */
@@ -303,32 +251,6 @@ contract ExchangeOrderList is Initializable {
             result[i] = _sellerToOrders[user][i];
         }
     }
-
-    // /**
-    //  * @dev Get available exchange orders of a user
-    //  */
-    // function getAvailableExchangeOrdersByUser(address user)
-    //     external
-    //     view
-    //     returns (
-    //         ExchangeOrderType.ExchangeOrder[] memory resultERC721,
-    //         ExchangeOrderType.ExchangeOrder[] memory resultERC1155
-    //     )
-    // {
-    //     resultERC721 = new ExchangeOrderType.ExchangeOrder[](
-    //         _sellerToAvailableOrdersERC721[user].length
-    //     );
-    //     for (uint256 i = 0; i < _sellerToAvailableOrdersERC721[user].length; i++) {
-    //         resultERC721[i] = _exchangeOrders[_sellerToAvailableOrdersERC721[user][i]];
-    //     }
-
-    //     resultERC1155 = new ExchangeOrderType.ExchangeOrder[](
-    //         _sellerToAvailableOrdersERC1155[user].length
-    //     );
-    //     for (uint256 i = 0; i < _sellerToAvailableOrdersERC1155[user].length; i++) {
-    //         resultERC1155[i] = _exchangeOrders[_sellerToAvailableOrdersERC1155[user][i]];
-    //     }
-    // }
 
     /**
      * @dev Get list of ids of the available exchange orders of a user
@@ -349,21 +271,6 @@ contract ExchangeOrderList is Initializable {
         }
     }
 
-    // /**
-    //  * @dev Get exchange orders of a nftAddress
-    //  */
-    // function getAllExchangeOrdersByNftAddress(address nftAddress)
-    //     external
-    //     view
-    //     returns (ExchangeOrderType.ExchangeOrder[] memory result)
-    // {
-    //     result = new ExchangeOrderType.ExchangeOrder[](_nftToOrders[nftAddress].length);
-
-    //     for (uint256 i = 0; i < _nftToOrders[nftAddress].length; i++) {
-    //         result[i] = _exchangeOrders[_nftToOrders[nftAddress][i]];
-    //     }
-    // }
-
     /**
      * @dev Get list of id of exchange orders of a nftAddress
      */
@@ -379,21 +286,6 @@ contract ExchangeOrderList is Initializable {
         }
     }
 
-    // /**
-    //  * @dev Get available exchange orders of a nftAddress
-    //  */
-    // function getAvailableExchangeOrdersByNftAddress(address nftAddress)
-    //     external
-    //     view
-    //     returns (ExchangeOrderType.ExchangeOrder[] memory result)
-    // {
-    //     result = new ExchangeOrderType.ExchangeOrder[](_nftToAvailableOrders[nftAddress].length);
-
-    //     for (uint256 i = 0; i < _nftToAvailableOrders[nftAddress].length; i++) {
-    //         result[i] = _exchangeOrders[_nftToAvailableOrders[nftAddress][i]];
-    //     }
-    // }
-
     /**
      * @dev Get list of id of available exchange orders of a nftAddress
      */
@@ -408,21 +300,6 @@ contract ExchangeOrderList is Initializable {
             result[i] = _nftToAvailableOrders[nftAddress][i];
         }
     }
-
-    // /**
-    //  * @dev Get exchange orders was purchased by a user
-    //  */
-    // function getExchangeOrdersBoughtByUser(address user)
-    //     external
-    //     view
-    //     returns (ExchangeOrderType.ExchangeOrder[] memory result)
-    // {
-    //     result = new ExchangeOrderType.ExchangeOrder[](_buyers[user].length);
-
-    //     for (uint256 i = 0; i < _buyers[user].length; i++) {
-    //         result[i] = _exchangeOrders[_buyers[user][i]];
-    //     }
-    // }
 
     /**
      * @dev Get list of id of exchange orders was purchased by a user
@@ -554,13 +431,15 @@ contract ExchangeOrderList is Initializable {
         if (nftList.isERC1155(exchangeOrder.nftAddresses[0]) == true) {
             _availableExchangeOrdersERC1155.push(exchangeId);
             _sellerToAvailableOrdersERC1155[exchangeOrder.users[0]].push(exchangeId);
-            _inforToExchangeIdERC1155[exchangeOrder.users[0]][exchangeOrder
-                .nftAddresses[0]][exchangeOrder.tokenIds[0]] = exchangeId;
+            _inforToExchangeIdERC1155[exchangeOrder.users[0]][exchangeOrder.nftAddresses[0]][
+                exchangeOrder.tokenIds[0]
+            ] = exchangeId;
         } else {
             _availableExchangeOrdersERC721.push(exchangeId);
             _sellerToAvailableOrdersERC721[exchangeOrder.users[0]].push(exchangeId);
-            _inforToExchangeIdERC721[exchangeOrder.nftAddresses[0]][exchangeOrder
-                .tokenIds[0]] = exchangeId;
+            _inforToExchangeIdERC721[exchangeOrder.nftAddresses[0]][
+                exchangeOrder.tokenIds[0]
+            ] = exchangeId;
         }
     }
 
