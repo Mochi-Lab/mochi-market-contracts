@@ -28,8 +28,9 @@ library NFTInfoLogic {
      * @dev Admin accepts a nft address so it can trade in the market
      * @param nftInfo nftInfo object
      **/
-    function accept(NFTInfoType.NFTInfo storage nftInfo) internal {
+    function accept(NFTInfoType.NFTInfo storage nftInfo, bytes memory permissionData) internal {
         nftInfo.isAccepted = true;
+        nftInfo.permissionData = permissionData;
     }
 
     /**

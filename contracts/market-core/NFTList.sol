@@ -18,6 +18,7 @@ import "../libraries/helpers/ArrayLib.sol";
  * @author MochiLab
  **/
 contract NFTList is Initializable {
+    using Address for address;
     using NFTInfoLogic for NFTInfoType.NFTInfo;
     using ArrayLib for uint256[];
 
@@ -30,6 +31,7 @@ contract NFTList is Initializable {
     event Initialized(address indexed provider);
     event NFTRegistered(address indexed nftAddress, bool erc1155);
     event NFTAccepted(address indexed nftAddress);
+    event NFTRevoked(address indexed nftAddress);
     event NFTAdded(address indexed nftAddress, bool erc1155);
 
     modifier onlyMarketAdmin() {
@@ -84,11 +86,14 @@ contract NFTList is Initializable {
      * - Can only be called by admin
      * @param nftAddress The address of nft contract
      **/
-    function acceptNFT(address nftAddress) external onlyMarketAdmin {
+    function acceptNFT(address nftAddress, bytes memory permissionData) external onlyMarketAdmin {
         require(_nftToInfo[nftAddress].isRegistered, Errors.NFT_NOT_REGISTERED);
         require(!_nftToInfo[nftAddress].isAccepted, Errors.NFT_ALREADY_ACCEPTED);
 
-        _nftToInfo[nftAddress].accept();
+        bytes memory returndata = nftAddress.functionStaticCall(permissionData);
+        require(returndata.length > 0);
+
+        _nftToInfo[nftAddress].accept(permissionData);
         _acceptedList.push(_nftToInfo[nftAddress].id);
 
         emit NFTAccepted(nftAddress);
@@ -106,7 +111,7 @@ contract NFTList is Initializable {
         _nftToInfo[nftAddress].revoke();
         _acceptedList.removeAtValue(_nftToInfo[nftAddress].id);
 
-        emit NFTAccepted(nftAddress);
+        emit NFTRevoked(nftAddress);
     }
 
     /**
@@ -129,10 +134,14 @@ contract NFTList is Initializable {
      * @param nftAddress The address of nft contract
      * @param isErc1155 What type of nft, ERC1155 or ERC721?
      **/
-    function addNFTDirectly(address nftAddress, bool isErc1155) external onlyCreativeStudio {
+    function addNFTDirectly(
+        address nftAddress,
+        bool isErc1155,
+        bytes memory permissionData
+    ) external onlyCreativeStudio {
         _nftToInfo[nftAddress].register(_nftsList.length, nftAddress, isErc1155);
         _nftsList.push(nftAddress);
-        _nftToInfo[nftAddress].accept();
+        _nftToInfo[nftAddress].accept(permissionData);
         _acceptedList.push(_nftToInfo[nftAddress].id);
         emit NFTAdded(nftAddress, isErc1155);
     }

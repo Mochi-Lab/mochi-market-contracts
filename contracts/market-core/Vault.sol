@@ -3,12 +3,12 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "./MochiRewardToken.sol";
 import "../libraries/helpers/Errors.sol";
 import "../interfaces/IAddressesProvider.sol";
+import "../interfaces/INFTList.sol";
 
 /**
  * @title Vault contract
@@ -19,9 +19,12 @@ import "../interfaces/IAddressesProvider.sol";
  **/
 
 contract Vault is Initializable, ReentrancyGuard {
+    using Address for address;
+
     uint256 public constant SAFE_NUMBER = 1e12;
 
     IAddressesProvider public addressesProvider;
+    INFTList public nftList;
 
     // MochiLab tokens balance
     // token address => fund
@@ -120,6 +123,7 @@ contract Vault is Initializable, ReentrancyGuard {
         _royaltyNumerator = numerator;
         _royaltyDenominator = denominator;
         addressesProvider = IAddressesProvider(provider);
+        nftList = INFTList(addressesProvider.getNFTList());
 
         string memory name = string(abi.encodePacked("rMOCHI for: ", nativeToken));
         string memory symbol = string(abi.encodePacked("rMOCHI_", nativeToken));
@@ -227,7 +231,7 @@ contract Vault is Initializable, ReentrancyGuard {
         address payable receiver
     ) external nonReentrant {
         require(_nftToRoyalty[nftAddress][token] >= amount, Errors.INSUFFICIENT_BALANCE);
-        require(msg.sender == Ownable(nftAddress).owner(), Errors.CALLER_NOT_CONTRACT_OWNER);
+        require(_checkPermission(nftAddress) == true, Errors.CALLER_NOT_CONTRACT_OWNER);
 
         _nftToRoyalty[nftAddress][token] = _nftToRoyalty[nftAddress][token] - amount;
 
@@ -347,8 +351,16 @@ contract Vault is Initializable, ReentrancyGuard {
     }
 
     function _calculateRoyalty(uint256 amount) internal view returns (uint256) {
-        uint256 royaltyAmount = ((amount * SAFE_NUMBER * _royaltyNumerator) / _royaltyDenominator) /
-            SAFE_NUMBER;
+        uint256 royaltyAmount =
+            ((amount * SAFE_NUMBER * _royaltyNumerator) / _royaltyDenominator) / SAFE_NUMBER;
         return royaltyAmount;
+    }
+
+    function _checkPermission(address nftAddress) internal view returns (bool) {
+        NFTInfoType.NFTInfo memory info = nftList.getNFTInfo(nftAddress);
+
+        bytes memory returndata = nftAddress.functionStaticCall(info.permissionData);
+
+        return (abi.decode(returndata, (address)) == msg.sender);
     }
 }
