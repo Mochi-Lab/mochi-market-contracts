@@ -18,7 +18,6 @@ import "../libraries/helpers/ArrayLib.sol";
  * @author MochiLab
  **/
 contract NFTList is Initializable {
-    using Address for address;
     using NFTInfoLogic for NFTInfoType.NFTInfo;
     using ArrayLib for uint256[];
 
@@ -74,7 +73,7 @@ contract NFTList is Initializable {
             require(IERC721(nftAddress).balanceOf(address(this)) >= 0);
         }
 
-        _nftToInfo[nftAddress].register(_nftsList.length, nftAddress, isErc1155);
+        _nftToInfo[nftAddress].register(_nftsList.length, nftAddress, isErc1155, msg.sender);
 
         _nftsList.push(nftAddress);
 
@@ -86,14 +85,11 @@ contract NFTList is Initializable {
      * - Can only be called by admin
      * @param nftAddress The address of nft contract
      **/
-    function acceptNFT(address nftAddress, bytes memory permissionData) external onlyMarketAdmin {
+    function acceptNFT(address nftAddress) external onlyMarketAdmin {
         require(_nftToInfo[nftAddress].isRegistered, Errors.NFT_NOT_REGISTERED);
         require(!_nftToInfo[nftAddress].isAccepted, Errors.NFT_ALREADY_ACCEPTED);
 
-        bytes memory returndata = nftAddress.functionStaticCall(permissionData);
-        require(returndata.length > 0);
-
-        _nftToInfo[nftAddress].accept(permissionData);
+        _nftToInfo[nftAddress].accept();
         _acceptedList.push(_nftToInfo[nftAddress].id);
 
         emit NFTAccepted(nftAddress);
@@ -137,11 +133,11 @@ contract NFTList is Initializable {
     function addNFTDirectly(
         address nftAddress,
         bool isErc1155,
-        bytes memory permissionData
+        address registrant
     ) external onlyCreativeStudio {
-        _nftToInfo[nftAddress].register(_nftsList.length, nftAddress, isErc1155);
+        _nftToInfo[nftAddress].register(_nftsList.length, nftAddress, isErc1155, registrant);
         _nftsList.push(nftAddress);
-        _nftToInfo[nftAddress].accept(permissionData);
+        _nftToInfo[nftAddress].accept();
         _acceptedList.push(_nftToInfo[nftAddress].id);
         emit NFTAdded(nftAddress, isErc1155);
     }

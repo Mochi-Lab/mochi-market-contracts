@@ -19,8 +19,6 @@ import "../interfaces/INFTList.sol";
  **/
 
 contract Vault is Initializable, ReentrancyGuard {
-    using Address for address;
-
     uint256 public constant SAFE_NUMBER = 1e12;
 
     IAddressesProvider public addressesProvider;
@@ -33,6 +31,7 @@ contract Vault is Initializable, ReentrancyGuard {
     // Royalty of NFT Contract, will be paid to owner of NFT Contract
     // nftAddress => token address => amount royalty
     mapping(address => mapping(address => uint256)) internal _nftToRoyalty;
+    mapping(address => address) internal _beneficiary;
 
     // RewardToken corresponding to each Token
     // token addres => rewardToken address
@@ -143,6 +142,10 @@ contract Vault is Initializable, ReentrancyGuard {
         }
     }
 
+    function setBeneficiary(address nftAddress, address beneficiary) external onlyMarketAdmin {
+        _beneficiary[nftAddress] = beneficiary;
+    }
+
     /**
      * @dev Deposit fee that Market receives the transaction of the user
      * - Can only be called by Market
@@ -231,7 +234,13 @@ contract Vault is Initializable, ReentrancyGuard {
         address payable receiver
     ) external nonReentrant {
         require(_nftToRoyalty[nftAddress][token] >= amount, Errors.INSUFFICIENT_BALANCE);
-        require(_checkPermission(nftAddress) == true, Errors.CALLER_NOT_CONTRACT_OWNER);
+
+        if (_beneficiary[nftAddress] != address(0)) {
+            require(_beneficiary[nftAddress] == msg.sender, Errors.INVALID_BENEFICIARY);
+        } else {
+            NFTInfoType.NFTInfo memory info = nftList.getNFTInfo(nftAddress);
+            require(info.registrant == msg.sender, Errors.INVALID_BENEFICIARY);
+        }
 
         _nftToRoyalty[nftAddress][token] = _nftToRoyalty[nftAddress][token] - amount;
 
@@ -354,13 +363,5 @@ contract Vault is Initializable, ReentrancyGuard {
         uint256 royaltyAmount =
             ((amount * SAFE_NUMBER * _royaltyNumerator) / _royaltyDenominator) / SAFE_NUMBER;
         return royaltyAmount;
-    }
-
-    function _checkPermission(address nftAddress) internal view returns (bool) {
-        NFTInfoType.NFTInfo memory info = nftList.getNFTInfo(nftAddress);
-
-        bytes memory returndata = nftAddress.functionStaticCall(info.permissionData);
-
-        return (abi.decode(returndata, (address)) == msg.sender);
     }
 }

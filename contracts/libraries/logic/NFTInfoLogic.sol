@@ -15,22 +15,23 @@ library NFTInfoLogic {
         NFTInfoType.NFTInfo storage nftInfo,
         uint256 id,
         address nftAddress,
-        bool isERC1155
+        bool isERC1155,
+        address registrant
     ) internal {
         nftInfo.id = id;
         nftInfo.nftAddress = nftAddress;
         nftInfo.isERC1155 = isERC1155;
         nftInfo.isRegistered = true;
         nftInfo.isAccepted = false;
+        nftInfo.registrant = registrant;
     }
 
     /**
      * @dev Admin accepts a nft address so it can trade in the market
      * @param nftInfo nftInfo object
      **/
-    function accept(NFTInfoType.NFTInfo storage nftInfo, bytes memory permissionData) internal {
+    function accept(NFTInfoType.NFTInfo storage nftInfo) internal {
         nftInfo.isAccepted = true;
-        nftInfo.permissionData = permissionData;
     }
 
     /**

@@ -195,11 +195,10 @@ describe('Market', async () => {
     let tokenId = '0';
     beforeEach(async () => {
       acceptedERC721 = await deployTestERC721(deployer, 'TestERC721', 'TestERC721');
-      let permissionData = acceptedERC721.interface.encodeFunctionData('owner');
 
       await nftList.connect(deployer).registerNFT(acceptedERC721.address, false);
 
-      await nftList.connect(marketAdmin).acceptNFT(acceptedERC721.address, permissionData);
+      await nftList.connect(marketAdmin).acceptNFT(acceptedERC721.address);
 
       await acceptedERC721.connect(deployer).mint(alice.address, tokenId);
     });
@@ -289,10 +288,9 @@ describe('Market', async () => {
       let TestERC721 = await ethers.getContractFactory('TestERC721');
       erc721 = await TestERC721.connect(deployer).deploy('TestERC721', 'TestERC721');
 
-      let permissionData = erc721.interface.encodeFunctionData('owner');
-
       await nftList.connect(deployer).registerNFT(erc721.address, false);
-      await nftList.connect(marketAdmin).acceptNFT(erc721.address, permissionData);
+      await nftList.connect(marketAdmin).acceptNFT(erc721.address);
+      // await vault.connect(marketAdmin).setBeneficiary(erc721.address, deployer.address);
 
       await erc721.connect(deployer).mint(alice.address, tokenId);
       await erc721.connect(alice).setApprovalForAll(market.address, true);

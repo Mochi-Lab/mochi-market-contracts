@@ -11,7 +11,7 @@ import "../libraries/types/NFTInfoType.sol";
 interface INFTList {
     function registerNFT(address nftAddress, bool isErc1155) external;
 
-    function acceptNFT(address nftAddress, bytes memory permissionData) external;
+    function acceptNFT(address nftAddress) external;
 
     function revokeNFT(address nftAddress) external;
 
@@ -20,7 +20,7 @@ interface INFTList {
     function addNFTDirectly(
         address nftAddress,
         bool isErc1155,
-        bytes memory permissionData
+        address registrant
     ) external;
 
     function getNFTInfo(address nftAddress) external view returns (NFTInfoType.NFTInfo memory);

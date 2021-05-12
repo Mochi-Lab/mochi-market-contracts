@@ -13,7 +13,7 @@ library NFTInfoType {
         bool isRegistered;
         // is accepted by admin
         bool isAccepted;
-        // call data for permission check
-        bytes permissionData;
+        // registrant
+        address registrant;
     }
 }

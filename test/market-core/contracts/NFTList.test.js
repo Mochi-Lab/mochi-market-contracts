@@ -80,33 +80,30 @@ describe('NFTList Contract', async () => {
     });
 
     it('Only Admin can accept NFT', async () => {
-      let permissionData = nftERC721.interface.encodeFunctionData('owner');
       await expectRevert(
-        nftList.connect(alice).acceptNFT(nftERC721.address, permissionData),
+        nftList.connect(alice).acceptNFT(nftERC721.address),
         ERRORS.CALLER_NOT_MARKET_ADMIN
       );
 
       await expectRevert(
-        nftList.connect(alice).acceptNFT(nftERC1155.address, permissionData),
+        nftList.connect(alice).acceptNFT(nftERC1155.address),
         ERRORS.CALLER_NOT_MARKET_ADMIN
       );
     });
 
     it('Admin accepts fail with an unregistered NFT', async () => {
       let anotherNFTERC721 = await deployTestERC721(alice, 'TestERC721_2', 'TestERC721_2');
-      let permissionData = nftERC721.interface.encodeFunctionData('owner');
 
       await expectRevert(
-        nftList.connect(marketAdmin).acceptNFT(anotherNFTERC721.address, permissionData),
+        nftList.connect(marketAdmin).acceptNFT(anotherNFTERC721.address),
         ERRORS.NFT_NOT_REGISTERED
       );
     });
 
     it('Admin accepts successfully', async () => {
-      let permissionData = nftERC721.interface.encodeFunctionData('owner');
-      await nftList.connect(marketAdmin).acceptNFT(nftERC721.address, permissionData);
+      await nftList.connect(marketAdmin).acceptNFT(nftERC721.address);
 
-      await nftList.connect(marketAdmin).acceptNFT(nftERC1155.address, permissionData);
+      await nftList.connect(marketAdmin).acceptNFT(nftERC1155.address);
 
       let nftERC721Info = await nftList.getNFTInfo(nftERC721.address);
       let nftERC1155Info = await nftList.getNFTInfo(nftERC1155.address);
@@ -118,16 +115,15 @@ describe('NFTList Contract', async () => {
     });
 
     it('Admin accepts fail with an accepted NFT', async () => {
-      let permissionData = nftERC721.interface.encodeFunctionData('owner');
-      await nftList.connect(marketAdmin).acceptNFT(nftERC721.address, permissionData);
-      await nftList.connect(marketAdmin).acceptNFT(nftERC1155.address, permissionData);
+      await nftList.connect(marketAdmin).acceptNFT(nftERC721.address);
+      await nftList.connect(marketAdmin).acceptNFT(nftERC1155.address);
 
       await expectRevert(
-        nftList.connect(marketAdmin).acceptNFT(nftERC721.address, permissionData),
+        nftList.connect(marketAdmin).acceptNFT(nftERC721.address),
         ERRORS.NFT_ALREADY_ACCEPTED
       );
       await expectRevert(
-        nftList.connect(marketAdmin).acceptNFT(nftERC1155.address, permissionData),
+        nftList.connect(marketAdmin).acceptNFT(nftERC1155.address),
         ERRORS.NFT_ALREADY_ACCEPTED
       );
     });

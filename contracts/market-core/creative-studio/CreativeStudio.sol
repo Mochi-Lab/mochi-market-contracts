@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "../../interfaces/IAddressesProvider.sol";
 import "../../interfaces/INFTList.sol";
@@ -71,11 +70,7 @@ contract CreativeStudio is Initializable, ReentrancyGuard {
 
         _userToCollections[msg.sender].push(newCollection.id);
 
-        nftList.addNFTDirectly(
-            newCollection.contractAddress,
-            false,
-            abi.encodeWithSelector(Ownable(collectionAddress).owner.selector)
-        );
+        nftList.addNFTDirectly(newCollection.contractAddress, false, msg.sender);
 
         emit CollectionCreated(msg.sender, newCollection.contractAddress, false);
     }
@@ -100,11 +95,7 @@ contract CreativeStudio is Initializable, ReentrancyGuard {
         _allCollections.push(newCollection);
         _userToCollections[msg.sender].push(newCollection.id);
 
-        nftList.addNFTDirectly(
-            newCollection.contractAddress,
-            true,
-            abi.encodeWithSelector(Ownable(collectionAddress).owner.selector)
-        );
+        nftList.addNFTDirectly(newCollection.contractAddress, true, msg.sender);
 
         emit CollectionCreated(msg.sender, newCollection.contractAddress, true);
     }
