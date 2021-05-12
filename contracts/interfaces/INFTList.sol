@@ -17,9 +17,13 @@ interface INFTList {
 
     function isERC1155(address nftAddress) external view returns (bool);
 
-    function addNFTDirectly(address nftAddress, bool isErc1155) external;
+    function addNFTDirectly(
+        address nftAddress,
+        bool isErc1155,
+        address registrant
+    ) external;
 
-    function getNFTInfor(address nftAddress) external view returns (NFTInfoType.NFTInfo memory);
+    function getNFTInfo(address nftAddress) external view returns (NFTInfoType.NFTInfo memory);
 
     function getNFTCount() external view returns (uint256);
 

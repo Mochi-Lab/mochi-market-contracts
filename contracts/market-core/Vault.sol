@@ -3,12 +3,12 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "./MochiRewardToken.sol";
 import "../libraries/helpers/Errors.sol";
 import "../interfaces/IAddressesProvider.sol";
+import "../interfaces/INFTList.sol";
 
 /**
  * @title Vault contract
@@ -22,6 +22,7 @@ contract Vault is Initializable, ReentrancyGuard {
     uint256 public constant SAFE_NUMBER = 1e12;
 
     IAddressesProvider public addressesProvider;
+    INFTList public nftList;
 
     // MochiLab tokens balance
     // token address => fund
@@ -30,6 +31,7 @@ contract Vault is Initializable, ReentrancyGuard {
     // Royalty of NFT Contract, will be paid to owner of NFT Contract
     // nftAddress => token address => amount royalty
     mapping(address => mapping(address => uint256)) internal _nftToRoyalty;
+    mapping(address => address) internal _beneficiary;
 
     // RewardToken corresponding to each Token
     // token addres => rewardToken address
@@ -120,6 +122,7 @@ contract Vault is Initializable, ReentrancyGuard {
         _royaltyNumerator = numerator;
         _royaltyDenominator = denominator;
         addressesProvider = IAddressesProvider(provider);
+        nftList = INFTList(addressesProvider.getNFTList());
 
         string memory name = string(abi.encodePacked("rMOCHI for: ", nativeToken));
         string memory symbol = string(abi.encodePacked("rMOCHI_", nativeToken));
@@ -137,6 +140,10 @@ contract Vault is Initializable, ReentrancyGuard {
             MochiRewardToken newReward = new MochiRewardToken(name, symbol);
             _tokenToRewardToken[token] = address(newReward);
         }
+    }
+
+    function setBeneficiary(address nftAddress, address beneficiary) external onlyMarketAdmin {
+        _beneficiary[nftAddress] = beneficiary;
     }
 
     /**
@@ -227,7 +234,13 @@ contract Vault is Initializable, ReentrancyGuard {
         address payable receiver
     ) external nonReentrant {
         require(_nftToRoyalty[nftAddress][token] >= amount, Errors.INSUFFICIENT_BALANCE);
-        require(msg.sender == Ownable(nftAddress).owner(), Errors.CALLER_NOT_CONTRACT_OWNER);
+
+        if (_beneficiary[nftAddress] != address(0)) {
+            require(_beneficiary[nftAddress] == msg.sender, Errors.INVALID_BENEFICIARY);
+        } else {
+            NFTInfoType.NFTInfo memory info = nftList.getNFTInfo(nftAddress);
+            require(info.registrant == msg.sender, Errors.INVALID_BENEFICIARY);
+        }
 
         _nftToRoyalty[nftAddress][token] = _nftToRoyalty[nftAddress][token] - amount;
 
@@ -347,8 +360,8 @@ contract Vault is Initializable, ReentrancyGuard {
     }
 
     function _calculateRoyalty(uint256 amount) internal view returns (uint256) {
-        uint256 royaltyAmount = ((amount * SAFE_NUMBER * _royaltyNumerator) / _royaltyDenominator) /
-            SAFE_NUMBER;
+        uint256 royaltyAmount =
+            ((amount * SAFE_NUMBER * _royaltyNumerator) / _royaltyDenominator) / SAFE_NUMBER;
         return royaltyAmount;
     }
 }

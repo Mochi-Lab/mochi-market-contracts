@@ -55,4 +55,5 @@ library Errors {
     string public constant AMOUNT_IS_NOT_EQUAL_ONE = "Amount is not equal 1"; // 'Amount must equal 1'
     string public constant INVALID_CALLDATA = "Invalid call data"; // 'Invalid call data'
     string public constant INVALID_DESTINATION = "Invalid destination"; // 'Invalid destination id'
+    string public constant INVALID_BENEFICIARY = "Invalid beneficiary";
 }

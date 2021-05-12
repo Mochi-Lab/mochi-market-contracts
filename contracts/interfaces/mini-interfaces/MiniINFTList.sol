@@ -11,7 +11,7 @@ import "../../libraries/types/NFTInfoType.sol";
 interface MiniINFTList {
     function isERC1155(address nftAddress) external view returns (bool);
 
-    function getNFTInfor(address nftAddress) external view returns (NFTInfoType.NFTInfo memory);
+    function getNFTInfo(address nftAddress) external view returns (NFTInfoType.NFTInfo memory);
 
     function getNFTCount() external view returns (uint256);
 

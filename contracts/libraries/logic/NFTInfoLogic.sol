@@ -15,13 +15,15 @@ library NFTInfoLogic {
         NFTInfoType.NFTInfo storage nftInfo,
         uint256 id,
         address nftAddress,
-        bool isERC1155
+        bool isERC1155,
+        address registrant
     ) internal {
         nftInfo.id = id;
         nftInfo.nftAddress = nftAddress;
         nftInfo.isERC1155 = isERC1155;
         nftInfo.isRegistered = true;
         nftInfo.isAccepted = false;
+        nftInfo.registrant = registrant;
     }
 
     /**

@@ -30,6 +30,7 @@ contract NFTList is Initializable {
     event Initialized(address indexed provider);
     event NFTRegistered(address indexed nftAddress, bool erc1155);
     event NFTAccepted(address indexed nftAddress);
+    event NFTRevoked(address indexed nftAddress);
     event NFTAdded(address indexed nftAddress, bool erc1155);
 
     modifier onlyMarketAdmin() {
@@ -72,7 +73,7 @@ contract NFTList is Initializable {
             require(IERC721(nftAddress).balanceOf(address(this)) >= 0);
         }
 
-        _nftToInfo[nftAddress].register(_nftsList.length, nftAddress, isErc1155);
+        _nftToInfo[nftAddress].register(_nftsList.length, nftAddress, isErc1155, msg.sender);
 
         _nftsList.push(nftAddress);
 
@@ -106,7 +107,7 @@ contract NFTList is Initializable {
         _nftToInfo[nftAddress].revoke();
         _acceptedList.removeAtValue(_nftToInfo[nftAddress].id);
 
-        emit NFTAccepted(nftAddress);
+        emit NFTRevoked(nftAddress);
     }
 
     /**
@@ -129,8 +130,12 @@ contract NFTList is Initializable {
      * @param nftAddress The address of nft contract
      * @param isErc1155 What type of nft, ERC1155 or ERC721?
      **/
-    function addNFTDirectly(address nftAddress, bool isErc1155) external onlyCreativeStudio {
-        _nftToInfo[nftAddress].register(_nftsList.length, nftAddress, isErc1155);
+    function addNFTDirectly(
+        address nftAddress,
+        bool isErc1155,
+        address registrant
+    ) external onlyCreativeStudio {
+        _nftToInfo[nftAddress].register(_nftsList.length, nftAddress, isErc1155, registrant);
         _nftsList.push(nftAddress);
         _nftToInfo[nftAddress].accept();
         _acceptedList.push(_nftToInfo[nftAddress].id);

@@ -93,6 +93,7 @@ describe('NFTList Contract', async () => {
 
     it('Admin accepts fail with an unregistered NFT', async () => {
       let anotherNFTERC721 = await deployTestERC721(alice, 'TestERC721_2', 'TestERC721_2');
+
       await expectRevert(
         nftList.connect(marketAdmin).acceptNFT(anotherNFTERC721.address),
         ERRORS.NFT_NOT_REGISTERED
@@ -101,6 +102,7 @@ describe('NFTList Contract', async () => {
 
     it('Admin accepts successfully', async () => {
       await nftList.connect(marketAdmin).acceptNFT(nftERC721.address);
+
       await nftList.connect(marketAdmin).acceptNFT(nftERC1155.address);
 
       let nftERC721Info = await nftList.getNFTInfo(nftERC721.address);

@@ -197,6 +197,7 @@ describe('Market', async () => {
       acceptedERC721 = await deployTestERC721(deployer, 'TestERC721', 'TestERC721');
 
       await nftList.connect(deployer).registerNFT(acceptedERC721.address, false);
+
       await nftList.connect(marketAdmin).acceptNFT(acceptedERC721.address);
 
       await acceptedERC721.connect(deployer).mint(alice.address, tokenId);
@@ -289,6 +290,7 @@ describe('Market', async () => {
 
       await nftList.connect(deployer).registerNFT(erc721.address, false);
       await nftList.connect(marketAdmin).acceptNFT(erc721.address);
+      // await vault.connect(marketAdmin).setBeneficiary(erc721.address, deployer.address);
 
       await erc721.connect(deployer).mint(alice.address, tokenId);
       await erc721.connect(alice).setApprovalForAll(market.address, true);
@@ -390,7 +392,7 @@ describe('Market', async () => {
       await expectRevert(market.connect(bob).cancleSellOrder(0), ERRORS.CALLER_NOT_SELLER);
     });
 
-    it('User who is not seller calls cancleSellOrder successfully', async () => {
+    it('Seller calls cancleSellOrder successfully', async () => {
       await market.connect(alice).cancleSellOrder(0);
 
       let sellOrderInfo = await sellOrderList.getSellOrderById(0);
@@ -634,6 +636,18 @@ describe('Market', async () => {
         expect(availableSellOrdersIdListByUserERC721).to.be.not.include(0);
         expect(allSellOrdersIdListByNftAddressERC721).to.be.include(0);
         expect(availableSellOrdersIdListByNftAddressERC721).to.be.not.include(0);
+      });
+
+      it('Claim royalty', async () => {
+        let amount = parseInt(await vault.getRoyalty(erc721.address, ETH_Address));
+
+        await vault
+          .connect(deployer)
+          .claimRoyalty(erc721.address, ETH_Address, amount / 2, deployer.address);
+
+        expect(parseInt(await vault.getRoyalty(erc721.address, ETH_Address))).to.be.equal(
+          amount / 2
+        );
       });
 
       it('Seller cannot cancleSellOrder cause sellOrder was completed', async () => {
