@@ -17,7 +17,7 @@ async function main() {
   let momaFeeDenominator = '100';
   let regularFeeNumerator = '25';
   let regularFeeDenominator = '1000';
-  let nativeCoin = 'ETH';
+  let nativeCoin;
   let tx;
 
   let [deployer, marketAdmin] = await ethers.getSigners();
@@ -26,6 +26,10 @@ async function main() {
 
   if (network.name === 'rinkeby') {
     momaTokenAddress = '0xFF02166F7ef6F03b18fB7c6e23d30430202Ef9A2';
+    nativeCoin = 'ETH';
+  }
+  if (network.name === 'bsctestnet') {
+    nativeCoin = 'BNB';
   }
 
   if (momaTokenAddress === '' || momaTokenAddress === undefined) {

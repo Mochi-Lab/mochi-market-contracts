@@ -27,7 +27,7 @@ module.exports = {
       defaultBalanceEther: '1000',
     },
     bsctestnet: {
-      url: `https://data-seed-prebsc-2-s3.binance.org:8545/`,
+      url: `https://data-seed-prebsc-1-s1.binance.org:8545/`,
       accounts: [
         process.env.BSC_TESTNET_DEPLOYER_PRIVATE_KEY,
         process.env.BSC_TESTNET_MARKET_ADMIN_PRIVATE_KEY,

@@ -12,7 +12,7 @@ const {
 } = require('../helpers');
 const { ERRORS, REGULAR_FEE, MOMA_FEE } = require('../constans');
 
-describe('Market', async () => {
+describe.only('Market', async () => {
   let addressesProvider, nftList, vault, market, sellOrderList, exchangeOrderList;
   let moma;
   let deployer, marketAdmin, alice, bob;
@@ -260,24 +260,6 @@ describe('Market', async () => {
         ERRORS.AMOUNT_IS_NOT_EQUAL_ONE
       );
     });
-
-    it('User calls createSellOrder fail cause he is not NFT owner', async () => {
-      await expectRevert(
-        market
-          .connect(bob)
-          .createSellOrder(acceptedERC721.address, tokenId, '1', '1000', ETH_Address),
-        ERRORS.CALLER_NOT_NFT_OWNER
-      );
-    });
-
-    it('User calls createSellOrder fail cause he has not approved NFT for Market yet.', async () => {
-      await expectRevert(
-        market
-          .connect(alice)
-          .createSellOrder(acceptedERC721.address, tokenId, '1', '1000', ETH_Address),
-        ERRORS.NFT_NOT_APPROVED_FOR_MARKET
-      );
-    });
   });
 
   describe('Alice createSellOrder (with ERC721 and ETH) successfully', async () => {
@@ -522,21 +504,6 @@ describe('Market', async () => {
       await expectRevert(
         market.connect(bob).buy('0', '1', bob.address, '0x', { value: price + 1 }),
         ERRORS.VALUE_NOT_EQUAL_PRICE
-      );
-    });
-
-    it('User calls buy fail cause seller transfed nft', async () => {
-      await erc721.connect(alice).transferFrom(alice.address, deployer.address, tokenId);
-      await expectRevert.unspecified(
-        market.connect(bob).buy('0', '1', bob.address, '0x', { value: price })
-      );
-    });
-
-    it('User calls buy fail cause seller revoke approval', async () => {
-      await erc721.connect(alice).setApprovalForAll(market.address, false);
-      await expectRevert(
-        market.connect(bob).buy('0', '1', bob.address, '0x', { value: price }),
-        'ERC721: transfer caller is not owner nor approved'
       );
     });
 

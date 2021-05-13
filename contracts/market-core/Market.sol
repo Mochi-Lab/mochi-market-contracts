@@ -153,35 +153,7 @@ contract Market is Initializable, ReentrancyGuard {
         require(price > 0, MarketErrors.PRICE_IS_ZERO);
         require(acceptedToken[token] == true, MarketErrors.TOKEN_NOT_ACCEPTED);
 
-        if (nftList.isERC1155(nftAddress) == true) {
-            require(amount > 0, MarketErrors.AMOUNT_IS_ZERO);
-            require(
-                IERC1155(nftAddress).balanceOf(msg.sender, tokenId) >= amount,
-                MarketErrors.INSUFFICIENT_BALANCE
-            );
-            require(
-                IERC1155(nftAddress).isApprovedForAll(msg.sender, address(this)),
-                MarketErrors.NFT_NOT_APPROVED_FOR_MARKET
-            );
-            require(
-                !sellOrderList.checkDuplicateERC1155(nftAddress, tokenId, msg.sender),
-                MarketErrors.SELL_ORDER_DUPLICATE
-            );
-        } else {
-            require(amount == 1, MarketErrors.AMOUNT_IS_NOT_EQUAL_ONE);
-            require(
-                IERC721(nftAddress).ownerOf(tokenId) == msg.sender,
-                MarketErrors.CALLER_NOT_NFT_OWNER
-            );
-            require(
-                IERC721(nftAddress).isApprovedForAll(msg.sender, address(this)),
-                MarketErrors.NFT_NOT_APPROVED_FOR_MARKET
-            );
-            require(
-                !sellOrderList.checkDuplicateERC721(nftAddress, tokenId, msg.sender),
-                MarketErrors.SELL_ORDER_DUPLICATE
-            );
-        }
+        _transferAsset(nftAddress, tokenId, amount, msg.sender, address(this), "0x");
 
         sellOrderList.addSellOrder(nftAddress, tokenId, amount, payable(msg.sender), price, token);
     }
@@ -195,6 +167,16 @@ contract Market is Initializable, ReentrancyGuard {
         SellOrderType.SellOrder memory sellOrder = sellOrderList.getSellOrderById(sellId);
         require(sellOrder.seller == msg.sender, MarketErrors.CALLER_NOT_SELLER);
         require(sellOrder.isActive == true, MarketErrors.SELL_ORDER_NOT_ACTIVE);
+
+        _transferAsset(
+            sellOrder.nftAddress,
+            sellOrder.tokenId,
+            sellOrder.amount,
+            address(this),
+            sellOrder.seller,
+            "0x"
+        );
+
         sellOrderList.deactiveSellOrder(sellId);
     }
 
@@ -233,7 +215,7 @@ contract Market is Initializable, ReentrancyGuard {
             sellOrder.nftAddress,
             sellOrder.tokenId,
             amount,
-            sellOrder.seller,
+            address(this),
             receiver,
             data
         );
@@ -299,33 +281,14 @@ contract Market is Initializable, ReentrancyGuard {
                 require(acceptedToken[tokens[i]] == true, MarketErrors.TOKEN_NOT_ACCEPTED);
             }
         }
-        if (nftList.isERC1155(nftAddresses[0]) == true) {
-            require(
-                IERC1155(nftAddresses[0]).balanceOf(msg.sender, tokenIds[0]) >= nftAmounts[0],
-                MarketErrors.INSUFFICIENT_BALANCE
-            );
-            require(
-                IERC1155(nftAddresses[0]).isApprovedForAll(msg.sender, address(this)),
-                MarketErrors.NFT_NOT_APPROVED_FOR_MARKET
-            );
-            require(
-                !exchangeOrderList.checkDuplicateERC1155(nftAddresses[0], tokenIds[0], msg.sender),
-                MarketErrors.EXCHANGE_ORDER_DUPLICATE
-            );
-        } else {
-            require(
-                IERC721(nftAddresses[0]).ownerOf(tokenIds[0]) == msg.sender,
-                MarketErrors.CALLER_NOT_NFT_OWNER
-            );
-            require(
-                IERC721(nftAddresses[0]).getApproved(tokenIds[0]) == address(this),
-                MarketErrors.NFT_NOT_APPROVED_FOR_MARKET
-            );
-            require(
-                !exchangeOrderList.checkDuplicateERC721(nftAddresses[0], tokenIds[0], msg.sender),
-                MarketErrors.EXCHANGE_ORDER_DUPLICATE
-            );
-        }
+        _transferAsset(
+            nftAddresses[0],
+            tokenIds[0],
+            nftAmounts[0],
+            msg.sender,
+            address(this),
+            "0x"
+        );
 
         exchangeOrderList.addExchangeOrder(
             nftAddresses,
@@ -348,6 +311,16 @@ contract Market is Initializable, ReentrancyGuard {
             exchangeOrderList.getExchangeOrderById(exchangeId);
         require(exchangeOrder.users[0] == msg.sender, MarketErrors.CALLER_NOT_SELLER);
         require(exchangeOrder.isActive == true, MarketErrors.SELL_ORDER_NOT_ACTIVE);
+
+        _transferAsset(
+            exchangeOrder.nftAddresses[0],
+            exchangeOrder.tokenIds[0],
+            exchangeOrder.nftAmounts[0],
+            address(this),
+            exchangeOrder.users[0],
+            "0x"
+        );
+
         exchangeOrderList.deactiveExchangeOrder(exchangeId);
     }
 
@@ -468,9 +441,30 @@ contract Market is Initializable, ReentrancyGuard {
         bytes memory data
     ) internal {
         if (nftList.isERC1155(nftAddress) == true) {
+            require(amount > 0, MarketErrors.AMOUNT_IS_ZERO);
             IERC1155(nftAddress).safeTransferFrom(from, to, tokenId, amount, data);
         } else {
+            require(amount == 1, MarketErrors.AMOUNT_IS_NOT_EQUAL_ONE);
             IERC721(nftAddress).safeTransferFrom(from, to, tokenId, data);
         }
+    }
+
+    function onERC721Received(
+        address operator,
+        address from,
+        uint256 tokenId,
+        bytes calldata data
+    ) external pure returns (bytes4) {
+        return bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"));
+    }
+
+    function onERC1155Received(
+        address operator,
+        address from,
+        uint256 id,
+        uint256 value,
+        bytes calldata data
+    ) external pure returns (bytes4) {
+        return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
     }
 }
