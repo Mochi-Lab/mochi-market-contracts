@@ -20,10 +20,11 @@ library MarketErrors {
     string public constant SELL_ORDER_NOT_ACTIVE = "Sell order is not active"; // 'The sell order must be active'
     string public constant CALLER_IS_SELLER = "Caller is seller"; // 'The caller must be not the seller'
     string public constant AMOUNT_IS_NOT_ENOUGH = "Amount is not enough"; // 'Amount is not enough'
-    string public constant VALUE_NOT_EQUAL_PRICE = "Msg.value not equal price"; // 'The msg.value must equal price'
+    string public constant VALUE_NOT_EQUAL_PRICE = "Msg.value is not equal price"; // 'The msg.value must equal price'
     string public constant PRICE_NOT_CHANGE = "Price is not change"; // 'The new price must be not equal price'
     string public constant PARAMETERS_NOT_MATCH = "The parameters are not match"; // 'The parameters must be match'
     string public constant INVALID_CALLDATA = "Invalid call data"; // 'Invalid call data'
     string public constant EXCHANGE_ORDER_DUPLICATE = "Exchange order is duplicate"; // 'The exchange order must be unique'
     string public constant INVALID_DESTINATION = "Invalid destination"; // 'Invalid destination id'
+    string public constant EXCHANGE_ORDER_NOT_ACTIVE = "Exchange order is not active";
 }

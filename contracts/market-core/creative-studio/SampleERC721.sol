@@ -67,8 +67,8 @@ abstract contract Ownable {
     }
 }
 
-// ERC721 has an auto-incremental tokenId that cannot be burned
-contract SampleERC721 is ERC721, Ownable {
+// ERC721Enumerable has an auto-incremental tokenId that cannot be burned
+contract SampleERC721 is ERC721Enumerable, Ownable {
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIds;

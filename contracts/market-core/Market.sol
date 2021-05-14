@@ -263,7 +263,8 @@ contract Market is Initializable, ReentrancyGuard {
                 tokenIds.length == nftAmounts.length &&
                 nftAmounts.length == tokens.length &&
                 tokens.length == prices.length &&
-                prices.length == data.length,
+                prices.length == data.length &&
+                users.length == 1,
             MarketErrors.PARAMETERS_NOT_MATCH
         );
         require(msg.sender == users[0], MarketErrors.PARAMETERS_NOT_MATCH);
@@ -281,6 +282,7 @@ contract Market is Initializable, ReentrancyGuard {
                 require(acceptedToken[tokens[i]] == true, MarketErrors.TOKEN_NOT_ACCEPTED);
             }
         }
+
         _transferAsset(
             nftAddresses[0],
             tokenIds[0],
@@ -310,7 +312,7 @@ contract Market is Initializable, ReentrancyGuard {
         ExchangeOrderType.ExchangeOrder memory exchangeOrder =
             exchangeOrderList.getExchangeOrderById(exchangeId);
         require(exchangeOrder.users[0] == msg.sender, MarketErrors.CALLER_NOT_SELLER);
-        require(exchangeOrder.isActive == true, MarketErrors.SELL_ORDER_NOT_ACTIVE);
+        require(exchangeOrder.isActive == true, MarketErrors.EXCHANGE_ORDER_NOT_ACTIVE);
 
         _transferAsset(
             exchangeOrder.nftAddresses[0],
@@ -339,7 +341,7 @@ contract Market is Initializable, ReentrancyGuard {
         ExchangeOrderType.ExchangeOrder memory exchangeOrder =
             exchangeOrderList.getExchangeOrderById(exchangeId);
         require(exchangeOrder.users[0] != msg.sender, MarketErrors.CALLER_IS_SELLER);
-        require(exchangeOrder.isActive == true, MarketErrors.SELL_ORDER_NOT_ACTIVE);
+        require(exchangeOrder.isActive == true, MarketErrors.EXCHANGE_ORDER_NOT_ACTIVE);
         require(
             destinationId > 0 && destinationId < exchangeOrder.nftAddresses.length,
             MarketErrors.INVALID_DESTINATION
@@ -365,7 +367,7 @@ contract Market is Initializable, ReentrancyGuard {
             exchangeOrder.nftAddresses[0],
             exchangeOrder.tokenIds[0],
             exchangeOrder.nftAmounts[0],
-            exchangeOrder.users[0],
+            address(this),
             receiver,
             data
         );

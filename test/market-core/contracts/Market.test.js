@@ -12,7 +12,7 @@ const {
 } = require('../helpers');
 const { ERRORS, REGULAR_FEE, MOMA_FEE } = require('../constans');
 
-describe.only('Market', async () => {
+describe('Market', async () => {
   let addressesProvider, nftList, vault, market, sellOrderList, exchangeOrderList;
   let moma;
   let deployer, marketAdmin, alice, bob;
@@ -294,13 +294,11 @@ describe.only('Market', async () => {
       expect(sellOrderInfo.buyers.length).to.be.equal(0);
       expect(sellOrderInfo.buyTimes.length).to.be.equal(0);
 
+      expect(await erc721.ownerOf(tokenId)).to.be.equal(market.address);
+
       let latestId = await sellOrderList.getLatestSellIdERC721(erc721.address, tokenId);
       expect(latestId.found).to.be.equal(true);
       expect(latestId.id).to.be.equal(0);
-
-      expect(
-        await sellOrderList.checkDuplicateERC721(erc721.address, tokenId, alice.address)
-      ).to.be.equal(true);
     });
 
     it('Check sell order info by getSellOrdersByIdList', async () => {
@@ -432,10 +430,6 @@ describe.only('Market', async () => {
       let latestId = await sellOrderList.getLatestSellIdERC721(erc721.address, tokenId);
       expect(latestId.found).to.be.equal(true);
       expect(latestId.id).to.be.equal(0);
-
-      expect(
-        await sellOrderList.checkDuplicateERC721(erc721.address, tokenId, alice.address)
-      ).to.be.equal(false);
     });
 
     it('User calls cancleSellOrder fail cause sellOrder is not active', async () => {
@@ -544,14 +538,11 @@ describe.only('Market', async () => {
         expect(sellOrderInfo.isActive).to.be.equal(false);
         expect(sellOrderInfo.buyers).to.be.include(bob.address);
         expect(sellOrderInfo.buyTimes.length).to.be.equal(1);
+        expect(await erc721.ownerOf(tokenId)).to.be.equal(bob.address);
 
         let latestId = await sellOrderList.getLatestSellIdERC721(erc721.address, tokenId);
         expect(latestId.found).to.be.equal(true);
         expect(latestId.id).to.be.equal(0);
-
-        expect(
-          await sellOrderList.checkDuplicateERC721(erc721.address, tokenId, alice.address)
-        ).to.be.equal(false);
       });
 
       it('Check arrays', async () => {
@@ -628,6 +619,390 @@ describe.only('Market', async () => {
         await expectRevert(
           market.connect(bob).buy('0', '1', bob.address, '0x', { value: price }),
           ERRORS.SELL_ORDER_NOT_ACTIVE
+        );
+      });
+    });
+  });
+
+  describe('Alice createExchangeOrder (with ERC721 and ETH) successfully', async () => {
+    let erc721;
+    let erc1155;
+    let souTokenId = 0;
+    let desTokenId = 0;
+    let desAmount = 5;
+    let price = 1000000;
+    beforeEach(async () => {
+      let TestERC721 = await ethers.getContractFactory('TestERC721');
+      erc721 = await TestERC721.connect(deployer).deploy('TestERC721', 'TestERC721');
+
+      await nftList.connect(deployer).registerNFT(erc721.address, false);
+      await nftList.connect(marketAdmin).acceptNFT(erc721.address);
+      await erc721.connect(deployer).mint(alice.address, souTokenId);
+      await erc721.connect(alice).setApprovalForAll(market.address, true);
+
+      let TestERC1155 = await ethers.getContractFactory('TestERC1155');
+      erc1155 = await TestERC1155.connect(deployer).deploy('Test ERC1155');
+
+      await nftList.connect(deployer).registerNFT(erc1155.address, true);
+      await nftList.connect(marketAdmin).acceptNFT(erc1155.address);
+      await erc1155.connect(deployer).mint(bob.address, desTokenId, desAmount, '0x');
+      await erc1155.connect(bob).setApprovalForAll(market.address, true);
+
+      await market
+        .connect(alice)
+        .createExchangeOrder(
+          [erc721.address, erc1155.address],
+          [souTokenId, desTokenId],
+          [1, desAmount],
+          [ETH_Address, ETH_Address],
+          [0, price],
+          [alice.address],
+          ['0x', '0x']
+        );
+    });
+
+    it('Check sell order info by getExchangeOrderById', async () => {
+      expect(await exchangeOrderList.getExchangeOrderCount()).to.be.equal(1);
+
+      let exchangeOrderInfo = await exchangeOrderList.getExchangeOrderById(0);
+      expect(exchangeOrderInfo.nftAddresses[0]).to.be.equal(erc721.address);
+      expect(exchangeOrderInfo.nftAddresses[1]).to.be.equal(erc1155.address);
+
+      expect(exchangeOrderInfo.tokenIds[0]).to.be.equal(souTokenId);
+      expect(exchangeOrderInfo.tokenIds[1]).to.be.equal(desTokenId);
+
+      expect(exchangeOrderInfo.nftAmounts[0]).to.be.equal(1);
+      expect(exchangeOrderInfo.nftAmounts[1]).to.be.equal(desAmount);
+
+      expect(exchangeOrderInfo.tokens[0]).to.be.equal(ETH_Address);
+      expect(exchangeOrderInfo.tokens[1]).to.be.equal(ETH_Address);
+
+      expect(parseInt(exchangeOrderInfo.prices[0])).to.be.equal(0);
+      expect(parseInt(exchangeOrderInfo.prices[1])).to.be.equal(price);
+      expect(exchangeOrderInfo.isActive).to.be.equal(true);
+      expect(exchangeOrderInfo.users[0]).to.be.equal(alice.address);
+
+      expect(await erc721.ownerOf(souTokenId)).to.be.equal(market.address);
+
+      let latestId = await exchangeOrderList.getLatestExchangeIdERC721(erc721.address, souTokenId);
+      expect(latestId.found).to.be.equal(true);
+      expect(latestId.id).to.be.equal(0);
+    });
+
+    it('Check sell order info by getExchangeOrdersByIdList', async () => {
+      let result = await exchangeOrderList.getExchangeOrdersByIdList([0]);
+      let exchangeOrderInfo = result[0];
+
+      expect(exchangeOrderInfo.nftAddresses[0]).to.be.equal(erc721.address);
+      expect(exchangeOrderInfo.nftAddresses[1]).to.be.equal(erc1155.address);
+
+      expect(exchangeOrderInfo.tokenIds[0]).to.be.equal(souTokenId);
+      expect(exchangeOrderInfo.tokenIds[1]).to.be.equal(desTokenId);
+
+      expect(exchangeOrderInfo.nftAmounts[0]).to.be.equal(1);
+      expect(exchangeOrderInfo.nftAmounts[1]).to.be.equal(desAmount);
+
+      expect(exchangeOrderInfo.tokens[0]).to.be.equal(ETH_Address);
+      expect(exchangeOrderInfo.tokens[1]).to.be.equal(ETH_Address);
+
+      expect(parseInt(exchangeOrderInfo.prices[0])).to.be.equal(0);
+      expect(parseInt(exchangeOrderInfo.prices[1])).to.be.equal(price);
+      expect(exchangeOrderInfo.isActive).to.be.equal(true);
+      expect(exchangeOrderInfo.users[0]).to.be.equal(alice.address);
+    });
+
+    it('Check exchangeOrder Id is storaged in arrays', async () => {
+      let availableExchangeOrdersIdList = await exchangeOrderList.getAvailableExchangeOrdersIdList();
+      let allExchangeOrdersIdListByUser = await exchangeOrderList.getAllExchangeOrdersIdListByUser(
+        alice.address
+      );
+      let availableExchangeOrdersIdListByUser = await exchangeOrderList.getAvailableExchangeOrdersIdListByUser(
+        alice.address
+      );
+      let allExchangeOrdersIdListByNftAddress = await exchangeOrderList.getAllExchangeOrdersIdListByNftAddress(
+        erc721.address
+      );
+      let availableExchangeOrdersIdListByNftAddress = await exchangeOrderList.getAvailableExchangeOrdersIdListByNftAddress(
+        erc721.address
+      );
+
+      let availableExchangeOrdersIdListERC721 = [];
+      for (let i = 0; i < availableExchangeOrdersIdList.resultERC721.length; i++) {
+        availableExchangeOrdersIdListERC721[i] = parseInt(
+          availableExchangeOrdersIdList.resultERC721[i]
+        );
+      }
+
+      let allExchangeOrdersIdListByUserERC721 = [];
+      for (let i = 0; i < allExchangeOrdersIdListByUser.length; i++) {
+        allExchangeOrdersIdListByUserERC721[i] = parseInt(allExchangeOrdersIdListByUser[i]);
+      }
+
+      let availableExchangeOrdersIdListByUserERC721 = [];
+      for (let i = 0; i < availableExchangeOrdersIdListByUser.resultERC721.length; i++) {
+        availableExchangeOrdersIdListByUserERC721[i] = parseInt(
+          availableExchangeOrdersIdListByUser.resultERC721[i]
+        );
+      }
+
+      let allExchangeOrdersIdListByNftAddressERC721 = [];
+      for (let i = 0; i < allExchangeOrdersIdListByNftAddress.length; i++) {
+        allExchangeOrdersIdListByNftAddressERC721[i] = parseInt(
+          allExchangeOrdersIdListByNftAddress[i]
+        );
+      }
+
+      let availableExchangeOrdersIdListByNftAddressERC721 = [];
+      for (let i = 0; i < availableExchangeOrdersIdListByNftAddress.length; i++) {
+        availableExchangeOrdersIdListByNftAddressERC721[i] = parseInt(
+          availableExchangeOrdersIdListByNftAddress[i]
+        );
+      }
+
+      expect(availableExchangeOrdersIdListERC721).to.be.include(0);
+      expect(allExchangeOrdersIdListByUserERC721).to.be.include(0);
+      expect(availableExchangeOrdersIdListByUserERC721).to.be.include(0);
+      expect(allExchangeOrdersIdListByNftAddressERC721).to.be.include(0);
+      expect(availableExchangeOrdersIdListByNftAddressERC721).to.be.include(0);
+    });
+
+    it('User who is not seller calls cancleExchangeOrder fail', async () => {
+      await expectRevert(market.connect(bob).cancleExchangeOrder(0), ERRORS.CALLER_NOT_SELLER);
+    });
+
+    it('Seller calls cancleExchangeOrder successfully', async () => {
+      await market.connect(alice).cancleExchangeOrder(0);
+
+      let exchangeOrderInfo = await exchangeOrderList.getExchangeOrderById(0);
+      expect(exchangeOrderInfo.isActive).to.be.equal(false);
+
+      let availableExchangeOrdersIdList = await exchangeOrderList.getAvailableExchangeOrdersIdList();
+      let allExchangeOrdersIdListByUser = await exchangeOrderList.getAllExchangeOrdersIdListByUser(
+        alice.address
+      );
+      let availableExchangeOrdersIdListByUser = await exchangeOrderList.getAvailableExchangeOrdersIdListByUser(
+        alice.address
+      );
+      let allExchangeOrdersIdListByNftAddress = await exchangeOrderList.getAllExchangeOrdersIdListByNftAddress(
+        erc721.address
+      );
+      let availableExchangeOrdersIdListByNftAddress = await exchangeOrderList.getAvailableExchangeOrdersIdListByNftAddress(
+        erc721.address
+      );
+
+      let availableExchangeOrdersIdListERC721 = [];
+      for (let i = 0; i < availableExchangeOrdersIdList.resultERC721.length; i++) {
+        availableExchangeOrdersIdListERC721[i] = parseInt(
+          availableExchangeOrdersIdList.resultERC721[i]
+        );
+      }
+
+      let allExchangeOrdersIdListByUserERC721 = [];
+      for (let i = 0; i < allExchangeOrdersIdListByUser.length; i++) {
+        allExchangeOrdersIdListByUserERC721[i] = parseInt(allExchangeOrdersIdListByUser[i]);
+      }
+
+      let availableExchangeOrdersIdListByUserERC721 = [];
+      for (let i = 0; i < availableExchangeOrdersIdListByUser.resultERC721.length; i++) {
+        availableExchangeOrdersIdListByUserERC721[i] = parseInt(
+          availableExchangeOrdersIdListByUser.resultERC721[i]
+        );
+      }
+
+      let allExchangeOrdersIdListByNftAddressERC721 = [];
+      for (let i = 0; i < allExchangeOrdersIdListByNftAddress.length; i++) {
+        allExchangeOrdersIdListByNftAddressERC721[i] = parseInt(
+          allExchangeOrdersIdListByNftAddress[i]
+        );
+      }
+
+      let availableExchangeOrdersIdListByNftAddressERC721 = [];
+      for (let i = 0; i < availableExchangeOrdersIdListByNftAddress.length; i++) {
+        availableExchangeOrdersIdListByNftAddressERC721[i] = parseInt(
+          availableExchangeOrdersIdListByNftAddress[i]
+        );
+      }
+
+      expect(availableExchangeOrdersIdList.resultERC721).to.be.not.include(0);
+      expect(allExchangeOrdersIdListByUserERC721).to.be.include(0);
+      expect(availableExchangeOrdersIdListByUserERC721).to.be.not.include(0);
+      expect(allExchangeOrdersIdListByNftAddressERC721).to.be.include(0);
+      expect(availableExchangeOrdersIdListByNftAddressERC721).to.be.not.include(0);
+
+      let latestId = await exchangeOrderList.getLatestExchangeIdERC721(erc721.address, souTokenId);
+      expect(latestId.found).to.be.equal(true);
+      expect(latestId.id).to.be.equal(0);
+    });
+
+    it('User calls cancleExchangeOrder fail cause exchnageOrder is not active', async () => {
+      await market.connect(alice).cancleExchangeOrder(0);
+      await expectRevert(
+        market.connect(alice).cancleExchangeOrder(0),
+        ERRORS.EXCHANGE_ORDER_NOT_ACTIVE
+      );
+    });
+
+    it('User calls exchange fail cause he is seller', async () => {
+      await expectRevert(
+        market.connect(alice.address).exchange('0', '1', alice.address, '0x'),
+        ERRORS.CALLER_IS_SELLER
+      );
+    });
+
+    it('User calls exchange fail cause exchangelOrder is not active', async () => {
+      await market.connect(alice).cancleExchangeOrder(0);
+      await expectRevert(
+        market.connect(bob).exchange('0', '1', bob.address, '0x'),
+        ERRORS.EXCHANGE_ORDER_NOT_ACTIVE
+      );
+    });
+
+    it('User calls exchange fail cause msg.value is not equal price', async () => {
+      await expectRevert(
+        market.connect(bob).exchange('0', '1', bob.address, '0x', { value: price - 1 }),
+        ERRORS.VALUE_NOT_EQUAL_PRICE
+      );
+      await expectRevert(
+        market.connect(bob).exchange('0', '1', bob.address, '0x', { value: price + 1 }),
+        ERRORS.VALUE_NOT_EQUAL_PRICE
+      );
+    });
+
+    describe('User calls buy successfully (without reward token)', async () => {
+      let aliceBeforeBalance;
+      beforeEach(async () => {
+        aliceBeforeBalance = await ethers.provider.getBalance(alice.address);
+        await market.connect(bob).exchange('0', '1', bob.address, '0x', { value: price });
+      });
+
+      it('Check balance and ownership', async () => {
+        let aliceAfterBalance = await ethers.provider.getBalance(alice.address);
+
+        expect(aliceAfterBalance).to.be.gt(aliceBeforeBalance);
+        expect(await erc721.ownerOf(souTokenId)).to.be.equal(bob.address);
+        expect(await ethers.provider.getBalance(vault.address)).to.be.equal((price * 25) / 1000);
+        expect(await ethers.provider.getBalance(vault.address)).to.be.equal((price * 25) / 1000);
+        expect(await vault.getMochiFund(ETH_Address)).to.be.equal(
+          (((price * 25) / 1000) * 80) / 100
+        );
+        expect(await vault.getRoyalty(erc721.address, ETH_Address)).to.be.equal(
+          (((price * 25) / 1000) * 20) / 100
+        );
+
+        let ethRewardToken = await vault.getRewardToken(ETH_Address);
+        expect(await vault.getRewardTokenBalance(alice.address, ethRewardToken)).to.be.equal(0);
+      });
+
+      it('Check exchangeOrderInfo', async () => {
+        let exchangeOrderInfo = await exchangeOrderList.getExchangeOrderById(0);
+        expect(exchangeOrderInfo.nftAddresses[0]).to.be.equal(erc721.address);
+        expect(exchangeOrderInfo.nftAddresses[1]).to.be.equal(erc1155.address);
+
+        expect(exchangeOrderInfo.tokenIds[0]).to.be.equal(souTokenId);
+        expect(exchangeOrderInfo.tokenIds[1]).to.be.equal(desTokenId);
+
+        expect(exchangeOrderInfo.nftAmounts[0]).to.be.equal(1);
+        expect(exchangeOrderInfo.nftAmounts[1]).to.be.equal(desAmount);
+
+        expect(exchangeOrderInfo.tokens[0]).to.be.equal(ETH_Address);
+        expect(exchangeOrderInfo.tokens[1]).to.be.equal(ETH_Address);
+
+        expect(parseInt(exchangeOrderInfo.prices[0])).to.be.equal(0);
+        expect(parseInt(exchangeOrderInfo.prices[1])).to.be.equal(price);
+        expect(exchangeOrderInfo.isActive).to.be.equal(false);
+        expect(exchangeOrderInfo.users[0]).to.be.equal(alice.address);
+        expect(exchangeOrderInfo.users[1]).to.be.equal(bob.address);
+
+        expect(await erc721.ownerOf(souTokenId)).to.be.equal(bob.address);
+        expect(parseInt(await erc1155.balanceOf(alice.address, desTokenId))).to.be.equal(desAmount);
+        expect(parseInt(await erc1155.balanceOf(bob.address, desTokenId))).to.be.equal(0);
+
+        let latestId = await exchangeOrderList.getLatestExchangeIdERC721(
+          erc721.address,
+          souTokenId
+        );
+        expect(latestId.found).to.be.equal(true);
+        expect(latestId.id).to.be.equal(0);
+      });
+
+      it('Check arrays', async () => {
+        let availableExchangeOrdersIdList = await exchangeOrderList.getAvailableExchangeOrdersIdList();
+        let allExchangeOrdersIdListByUser = await exchangeOrderList.getAllExchangeOrdersIdListByUser(
+          alice.address
+        );
+        let availableExchangeOrdersIdListByUser = await exchangeOrderList.getAvailableExchangeOrdersIdListByUser(
+          alice.address
+        );
+        let allExchangeOrdersIdListByNftAddress = await exchangeOrderList.getAllExchangeOrdersIdListByNftAddress(
+          erc721.address
+        );
+        let availableExchangeOrdersIdListByNftAddress = await exchangeOrderList.getAvailableExchangeOrdersIdListByNftAddress(
+          erc721.address
+        );
+
+        let availableExchangeOrdersIdListERC721 = [];
+        for (let i = 0; i < availableExchangeOrdersIdList.resultERC721.length; i++) {
+          availableExchangeOrdersIdListERC721[i] = parseInt(
+            availableExchangeOrdersIdList.resultERC721[i]
+          );
+        }
+
+        let allExchangeOrdersIdListByUserERC721 = [];
+        for (let i = 0; i < allExchangeOrdersIdListByUser.length; i++) {
+          allExchangeOrdersIdListByUserERC721[i] = parseInt(allExchangeOrdersIdListByUser[i]);
+        }
+
+        let availableExchangeOrdersIdListByUserERC721 = [];
+        for (let i = 0; i < availableExchangeOrdersIdListByUser.resultERC721.length; i++) {
+          availableExchangeOrdersIdListByUserERC721[i] = parseInt(
+            availableExchangeOrdersIdListByUser.resultERC721[i]
+          );
+        }
+
+        let allExchangeOrdersIdListByNftAddressERC721 = [];
+        for (let i = 0; i < allExchangeOrdersIdListByNftAddress.length; i++) {
+          allExchangeOrdersIdListByNftAddressERC721[i] = parseInt(
+            allExchangeOrdersIdListByNftAddress[i]
+          );
+        }
+
+        let availableExchangeOrdersIdListByNftAddressERC721 = [];
+        for (let i = 0; i < availableExchangeOrdersIdListByNftAddress.length; i++) {
+          availableExchangeOrdersIdListByNftAddressERC721[i] = parseInt(
+            availableExchangeOrdersIdListByNftAddress[i]
+          );
+        }
+
+        expect(availableExchangeOrdersIdList.resultERC721).to.be.not.include(0);
+        expect(allExchangeOrdersIdListByUserERC721).to.be.include(0);
+        expect(availableExchangeOrdersIdListByUserERC721).to.be.not.include(0);
+        expect(allExchangeOrdersIdListByNftAddressERC721).to.be.include(0);
+        expect(availableExchangeOrdersIdListByNftAddressERC721).to.be.not.include(0);
+      });
+
+      it('Claim royalty', async () => {
+        let amount = parseInt(await vault.getRoyalty(erc721.address, ETH_Address));
+
+        await vault
+          .connect(deployer)
+          .claimRoyalty(erc721.address, ETH_Address, amount / 2, deployer.address);
+
+        expect(parseInt(await vault.getRoyalty(erc721.address, ETH_Address))).to.be.equal(
+          amount / 2
+        );
+      });
+
+      it('Seller cannot cancleExchangeOrder cause exchangeOrder was completed', async () => {
+        await expectRevert(
+          market.connect(alice).cancleExchangeOrder('0'),
+          ERRORS.EXCHANGE_ORDER_NOT_ACTIVE
+        );
+      });
+
+      it('User cannot buy a exchangeOrder was completed', async () => {
+        await expectRevert(
+          market.connect(bob).exchange('0', '1', bob.address, '0x', { value: price }),
+          ERRORS.EXCHANGE_ORDER_NOT_ACTIVE
         );
       });
     });
