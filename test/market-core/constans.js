@@ -19,7 +19,7 @@ exports.ERRORS = {
   PRICE_NOT_CHANGE: 'Price is not change',
   PRICE_IS_ZERO: 'Price is zero',
   CALLER_IS_SELLER: 'Caller is seller',
-  VALUE_NOT_EQUAL_PRICE: 'Msg.value not equal price',
+  VALUE_NOT_EQUAL_PRICE: 'Msg.value is not equal price',
   PERIOD_MUST_BE_GREATER_THAN_ZERO: 'Period must be greater than zero',
   NUMBER_OF_CYCLE_MUST_BE_GREATER_THAN_ZERO: 'Number of cycle must be greater than zero',
   INVALID_START_TIME: 'Invalid start time',
@@ -28,6 +28,7 @@ exports.ERRORS = {
   AMOUNT_IS_NOT_EQUAL_ONE: 'Amount is not equal 1',
   AMOUNT_IS_ZERO: 'Amount is zero',
   AMOUNT_IS_NOT_ENOUGH: 'Amount is not enough',
+  EXCHANGE_ORDER_NOT_ACTIVE: 'Exchange order is not active',
 };
 
 exports.IDS = {
