@@ -71,9 +71,25 @@ contract ExchangeOrderList is Initializable {
         bytes[] datas
     );
 
-    event ExchangeOrderDeactive(uint256 indexed exchangeId);
+    event ExchangeOrderDeactive(
+        uint256 exchangeId,
+        address indexed seller,
+        address indexed nftAddress,
+        uint256 tokenId
+    );
 
-    event ExchangeOrderCompleted(uint256 indexed exchangeId, uint256 destinationId, address buyer);
+    event ExchangeOrderCompleted(
+        uint256 exchangeId,
+        address indexed seller,
+        address indexed buyer,
+        address indexed nftAddress,
+        uint256 tokenId,
+        uint256 amount,
+        uint256 price,
+        address desNftAddress,
+        uint256 desTokenId,
+        uint256 desAmount
+    );
 
     modifier onlyMarket() {
         require(
@@ -120,18 +136,17 @@ contract ExchangeOrderList is Initializable {
 
         uint256[] memory times;
 
-        ExchangeOrderType.ExchangeOrder memory order =
-            ExchangeOrderLogic.newExchangeOrder(
-                exchangeId,
-                nftAddresses,
-                tokenIds,
-                nftAmounts,
-                tokens,
-                prices,
-                users,
-                times,
-                datas
-            );
+        ExchangeOrderType.ExchangeOrder memory order = ExchangeOrderLogic.newExchangeOrder(
+            exchangeId,
+            nftAddresses,
+            tokenIds,
+            nftAmounts,
+            tokens,
+            prices,
+            users,
+            times,
+            datas
+        );
 
         _exchangeOrders.push(order);
         _exchangeOrders[exchangeId].addTimestamp(block.timestamp);
@@ -158,7 +173,12 @@ contract ExchangeOrderList is Initializable {
         _exchangeOrders[exchangeId].deactive();
         _removeExchangeOrderFromList(exchangeId);
 
-        ExchangeOrderDeactive(_exchangeOrders[exchangeId].exchangeId);
+        emit ExchangeOrderDeactive(
+            exchangeId,
+            _exchangeOrders[exchangeId].users[0],
+            _exchangeOrders[exchangeId].users[0],
+            _exchangeOrders[exchangeId].tokenIds[0]
+        );
     }
 
     /**
@@ -176,7 +196,18 @@ contract ExchangeOrderList is Initializable {
         _buyers[buyer].push(exchangeId);
         _removeExchangeOrderFromList(exchangeId);
 
-        emit ExchangeOrderCompleted(exchangeId, destinationId, buyer);
+        emit ExchangeOrderCompleted(
+            exchangeId,
+            _exchangeOrders[exchangeId].users[0],
+            buyer,
+            _exchangeOrders[exchangeId].nftAddresses[0],
+            _exchangeOrders[exchangeId].tokenIds[0],
+            _exchangeOrders[exchangeId].nftAmounts[0],
+            _exchangeOrders[exchangeId].prices[destinationId],
+            _exchangeOrders[exchangeId].nftAddresses[destinationId],
+            _exchangeOrders[exchangeId].tokenIds[destinationId],
+            _exchangeOrders[exchangeId].nftAmounts[destinationId]
+        );
     }
 
     /**
@@ -431,15 +462,13 @@ contract ExchangeOrderList is Initializable {
         if (nftList.isERC1155(exchangeOrder.nftAddresses[0]) == true) {
             _availableExchangeOrdersERC1155.push(exchangeId);
             _sellerToAvailableOrdersERC1155[exchangeOrder.users[0]].push(exchangeId);
-            _inforToExchangeIdERC1155[exchangeOrder.users[0]][exchangeOrder.nftAddresses[0]][
-                exchangeOrder.tokenIds[0]
-            ] = exchangeId;
+            _inforToExchangeIdERC1155[exchangeOrder.users[0]][exchangeOrder
+                .nftAddresses[0]][exchangeOrder.tokenIds[0]] = exchangeId;
         } else {
             _availableExchangeOrdersERC721.push(exchangeId);
             _sellerToAvailableOrdersERC721[exchangeOrder.users[0]].push(exchangeId);
-            _inforToExchangeIdERC721[exchangeOrder.nftAddresses[0]][
-                exchangeOrder.tokenIds[0]
-            ] = exchangeId;
+            _inforToExchangeIdERC721[exchangeOrder.nftAddresses[0]][exchangeOrder
+                .tokenIds[0]] = exchangeId;
         }
     }
 

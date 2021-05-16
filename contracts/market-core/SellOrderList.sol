@@ -67,8 +67,22 @@ contract SellOrderList is Initializable {
         uint256 price,
         address token
     );
-    event SellOrderDeactive(uint256 indexed sellId);
-    event SellOrderCompleted(uint256 indexed sellId, address buyer, uint256 amount);
+    event SellOrderDeactive(
+        uint256 sellId,
+        address indexed seller,
+        address indexed nftAddress,
+        uint256 indexed tokenId,
+        uint256 price
+    );
+    event SellOrderCompleted(
+        uint256 sellId,
+        address indexed seller,
+        address indexed buyer,
+        address indexed nftAddress,
+        uint256 tokenId,
+        uint256 price,
+        uint256 amount
+    );
     event PriceChanged(uint256 sellId, uint256 newPrice);
 
     modifier onlyMarket() {
@@ -108,8 +122,15 @@ contract SellOrderList is Initializable {
         address token
     ) external onlyMarket {
         uint256 sellId = _sellOrders.length;
-        SellOrderType.SellOrder memory sellOrder =
-            SellOrderLogic.newSellOrder(sellId, nftAddress, tokenId, amount, seller, price, token);
+        SellOrderType.SellOrder memory sellOrder = SellOrderLogic.newSellOrder(
+            sellId,
+            nftAddress,
+            tokenId,
+            amount,
+            seller,
+            price,
+            token
+        );
 
         _addSellOrderToList(sellOrder);
 
@@ -124,7 +145,13 @@ contract SellOrderList is Initializable {
     function deactiveSellOrder(uint256 sellId) external onlyMarket {
         _sellOrders[sellId].deactive();
         _removeSellOrderFromList(sellId);
-        emit SellOrderDeactive(sellId);
+        emit SellOrderDeactive(
+            sellId,
+            _sellOrders[sellId].seller,
+            _sellOrders[sellId].nftAddress,
+            _sellOrders[sellId].tokenId,
+            _sellOrders[sellId].price
+        );
     }
 
     /**
@@ -145,7 +172,15 @@ contract SellOrderList is Initializable {
             _sellOrders[sellId].isActive = false;
             _removeSellOrderFromList(sellId);
         }
-        emit SellOrderCompleted(sellId, buyer, amount);
+        emit SellOrderCompleted(
+            sellId,
+            _sellOrders[sellId].seller,
+            buyer,
+            _sellOrders[sellId].nftAddress,
+            _sellOrders[sellId].tokenId,
+            _sellOrders[sellId].price,
+            amount
+        );
     }
 
     /**
@@ -415,9 +450,8 @@ contract SellOrderList is Initializable {
         if (nftList.isERC1155(sellOrder.nftAddress) == true) {
             _availableSellOrdersERC1155.push(sellId);
             _sellerToAvailableOrdersERC1155[sellOrder.seller].push(sellId);
-            _inforToSellIdERC1155[sellOrder.seller][sellOrder.nftAddress][
-                sellOrder.tokenId
-            ] = sellId;
+            _inforToSellIdERC1155[sellOrder.seller][sellOrder.nftAddress][sellOrder
+                .tokenId] = sellId;
         } else {
             _availableSellOrdersERC721.push(sellId);
             _sellerToAvailableOrdersERC721[sellOrder.seller].push(sellId);
