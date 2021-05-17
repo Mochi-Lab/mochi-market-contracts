@@ -34,8 +34,8 @@ async function main() {
 
   if (momaTokenAddress === '' || momaTokenAddress === undefined) {
     console.log('\nDeploy MOMA');
-    let TestERC20 = await ethers.getContractFactory('TestERC20');
-    let momaToken = await TestERC20.connect(deployer).deploy('MOchi MArket Token', 'MOMA');
+    let MOMATestnet = await ethers.getContractFactory('MOMATestnet');
+    let momaToken = await MOMATestnet.connect(deployer).deploy();
 
     await momaToken.deployed();
     momaTokenAddress = momaToken.address;
