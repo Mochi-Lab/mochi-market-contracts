@@ -72,7 +72,8 @@ contract SellOrderList is Initializable {
         address indexed seller,
         address indexed nftAddress,
         uint256 indexed tokenId,
-        uint256 price
+        uint256 price,
+        address token
     );
     event SellOrderCompleted(
         uint256 sellId,
@@ -81,7 +82,8 @@ contract SellOrderList is Initializable {
         address indexed nftAddress,
         uint256 tokenId,
         uint256 price,
-        uint256 amount
+        uint256 amount,
+        address token
     );
     event PriceChanged(uint256 sellId, uint256 newPrice);
 
@@ -122,15 +124,8 @@ contract SellOrderList is Initializable {
         address token
     ) external onlyMarket {
         uint256 sellId = _sellOrders.length;
-        SellOrderType.SellOrder memory sellOrder = SellOrderLogic.newSellOrder(
-            sellId,
-            nftAddress,
-            tokenId,
-            amount,
-            seller,
-            price,
-            token
-        );
+        SellOrderType.SellOrder memory sellOrder =
+            SellOrderLogic.newSellOrder(sellId, nftAddress, tokenId, amount, seller, price, token);
 
         _addSellOrderToList(sellOrder);
 
@@ -150,7 +145,8 @@ contract SellOrderList is Initializable {
             _sellOrders[sellId].seller,
             _sellOrders[sellId].nftAddress,
             _sellOrders[sellId].tokenId,
-            _sellOrders[sellId].price
+            _sellOrders[sellId].price,
+            _sellOrders[sellId].token
         );
     }
 
@@ -179,7 +175,8 @@ contract SellOrderList is Initializable {
             _sellOrders[sellId].nftAddress,
             _sellOrders[sellId].tokenId,
             _sellOrders[sellId].price,
-            amount
+            amount,
+            _sellOrders[sellId].token
         );
     }
 
@@ -450,8 +447,9 @@ contract SellOrderList is Initializable {
         if (nftList.isERC1155(sellOrder.nftAddress) == true) {
             _availableSellOrdersERC1155.push(sellId);
             _sellerToAvailableOrdersERC1155[sellOrder.seller].push(sellId);
-            _inforToSellIdERC1155[sellOrder.seller][sellOrder.nftAddress][sellOrder
-                .tokenId] = sellId;
+            _inforToSellIdERC1155[sellOrder.seller][sellOrder.nftAddress][
+                sellOrder.tokenId
+            ] = sellId;
         } else {
             _availableSellOrdersERC721.push(sellId);
             _sellerToAvailableOrdersERC721[sellOrder.seller].push(sellId);
