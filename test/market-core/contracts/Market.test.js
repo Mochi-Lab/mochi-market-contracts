@@ -371,12 +371,12 @@ describe('Market', async () => {
       expect(availableSellOrdersIdListByNftAddressERC721).to.be.include(0);
     });
 
-    it('User who is not seller calls cancleSellOrder fail', async () => {
-      await expectRevert(market.connect(bob).cancleSellOrder(0), ERRORS.CALLER_NOT_SELLER);
+    it('User who is not seller calls cancelSellOrder fail', async () => {
+      await expectRevert(market.connect(bob).cancelSellOrder(0), ERRORS.CALLER_NOT_SELLER);
     });
 
-    it('Seller calls cancleSellOrder successfully', async () => {
-      await market.connect(alice).cancleSellOrder(0);
+    it('Seller calls cancelSellOrder successfully', async () => {
+      await market.connect(alice).cancelSellOrder(0);
 
       let sellOrderInfo = await sellOrderList.getSellOrderById(0);
       expect(sellOrderInfo.isActive).to.be.equal(false);
@@ -435,9 +435,9 @@ describe('Market', async () => {
       expect(latestId.id).to.be.equal(0);
     });
 
-    it('User calls cancleSellOrder fail cause sellOrder is not active', async () => {
-      await market.connect(alice).cancleSellOrder(0);
-      await expectRevert(market.connect(alice).cancleSellOrder(0), ERRORS.SELL_ORDER_NOT_ACTIVE);
+    it('User calls cancelSellOrder fail cause sellOrder is not active', async () => {
+      await market.connect(alice).cancelSellOrder(0);
+      await expectRevert(market.connect(alice).cancelSellOrder(0), ERRORS.SELL_ORDER_NOT_ACTIVE);
     });
 
     it('User who is not seller calls updatePrice fail', async () => {
@@ -445,7 +445,7 @@ describe('Market', async () => {
     });
 
     it('User calls updatePrice fail cause sellOrder is not active', async () => {
-      await market.connect(alice).cancleSellOrder(0);
+      await market.connect(alice).cancelSellOrder(0);
       await expectRevert(
         market.connect(alice).updatePrice(0, '1000'),
         ERRORS.SELL_ORDER_NOT_ACTIVE
@@ -471,7 +471,7 @@ describe('Market', async () => {
     });
 
     it('User calls buy fail cause sellOrder is not active', async () => {
-      await market.connect(alice).cancleSellOrder(0);
+      await market.connect(alice).cancelSellOrder(0);
       await expectRevert(
         market.connect(bob).buy('0', '1', bob.address, '0x'),
         ERRORS.SELL_ORDER_NOT_ACTIVE
@@ -611,9 +611,9 @@ describe('Market', async () => {
         );
       });
 
-      it('Seller cannot cancleSellOrder cause sellOrder was completed', async () => {
+      it('Seller cannot cancelSellOrder cause sellOrder was completed', async () => {
         await expectRevert(
-          market.connect(alice).cancleSellOrder('0'),
+          market.connect(alice).cancelSellOrder('0'),
           ERRORS.SELL_ORDER_NOT_ACTIVE
         );
       });
@@ -769,12 +769,12 @@ describe('Market', async () => {
       expect(availableExchangeOrdersIdListByNftAddressERC721).to.be.include(0);
     });
 
-    it('User who is not seller calls cancleExchangeOrder fail', async () => {
-      await expectRevert(market.connect(bob).cancleExchangeOrder(0), ERRORS.CALLER_NOT_SELLER);
+    it('User who is not seller calls cancelExchangeOrder fail', async () => {
+      await expectRevert(market.connect(bob).cancelExchangeOrder(0), ERRORS.CALLER_NOT_SELLER);
     });
 
-    it('Seller calls cancleExchangeOrder successfully', async () => {
-      await market.connect(alice).cancleExchangeOrder(0);
+    it('Seller calls cancelExchangeOrder successfully', async () => {
+      await market.connect(alice).cancelExchangeOrder(0);
 
       let exchangeOrderInfo = await exchangeOrderList.getExchangeOrderById(0);
       expect(exchangeOrderInfo.isActive).to.be.equal(false);
@@ -837,10 +837,10 @@ describe('Market', async () => {
       expect(latestId.id).to.be.equal(0);
     });
 
-    it('User calls cancleExchangeOrder fail cause exchnageOrder is not active', async () => {
-      await market.connect(alice).cancleExchangeOrder(0);
+    it('User calls cancelExchangeOrder fail cause exchnageOrder is not active', async () => {
+      await market.connect(alice).cancelExchangeOrder(0);
       await expectRevert(
-        market.connect(alice).cancleExchangeOrder(0),
+        market.connect(alice).cancelExchangeOrder(0),
         ERRORS.EXCHANGE_ORDER_NOT_ACTIVE
       );
     });
@@ -853,7 +853,7 @@ describe('Market', async () => {
     });
 
     it('User calls exchange fail cause exchangelOrder is not active', async () => {
-      await market.connect(alice).cancleExchangeOrder(0);
+      await market.connect(alice).cancelExchangeOrder(0);
       await expectRevert(
         market.connect(bob).exchange('0', '1', bob.address, '0x'),
         ERRORS.EXCHANGE_ORDER_NOT_ACTIVE
@@ -995,9 +995,9 @@ describe('Market', async () => {
         );
       });
 
-      it('Seller cannot cancleExchangeOrder cause exchangeOrder was completed', async () => {
+      it('Seller cannot cancelExchangeOrder cause exchangeOrder was completed', async () => {
         await expectRevert(
-          market.connect(alice).cancleExchangeOrder('0'),
+          market.connect(alice).cancelExchangeOrder('0'),
           ERRORS.EXCHANGE_ORDER_NOT_ACTIVE
         );
       });

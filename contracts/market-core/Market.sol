@@ -158,13 +158,29 @@ contract Market is Initializable, ReentrancyGuard {
     }
 
     /**
-     * @dev Cancle a sell order
+     * @dev Cancel a sell order
      * - Can only be called by seller
      * @param sellId Sell order id
      **/
-    function cancleSellOrder(uint256 sellId) external nonReentrant {
+    function cancelSellOrder(uint256 sellId) external nonReentrant {
         SellOrderType.SellOrder memory sellOrder = sellOrderList.getSellOrderById(sellId);
         require(sellOrder.seller == msg.sender, MarketErrors.CALLER_NOT_SELLER);
+        require(sellOrder.isActive == true, MarketErrors.SELL_ORDER_NOT_ACTIVE);
+
+        _transferAsset(
+            sellOrder.nftAddress,
+            sellOrder.tokenId,
+            sellOrder.amount,
+            address(this),
+            sellOrder.seller,
+            "0x"
+        );
+
+        sellOrderList.deactiveSellOrder(sellId);
+    }
+
+    function removeSellOrder(uint256 sellId) external onlyMarketAdmin {
+        SellOrderType.SellOrder memory sellOrder = sellOrderList.getSellOrderById(sellId);
         require(sellOrder.isActive == true, MarketErrors.SELL_ORDER_NOT_ACTIVE);
 
         _transferAsset(
@@ -303,14 +319,31 @@ contract Market is Initializable, ReentrancyGuard {
     }
 
     /**
-     * @dev Cancle an exchange order
+     * @dev Cancel an exchange order
      * - Can only be called by seller
      * @param exchangeId Exchange order id
      **/
-    function cancleExchangeOrder(uint256 exchangeId) external nonReentrant {
-        ExchangeOrderType.ExchangeOrder memory exchangeOrder =
-            exchangeOrderList.getExchangeOrderById(exchangeId);
+    function cancelExchangeOrder(uint256 exchangeId) external nonReentrant {
+        ExchangeOrderType.ExchangeOrder memory exchangeOrder = exchangeOrderList
+            .getExchangeOrderById(exchangeId);
         require(exchangeOrder.users[0] == msg.sender, MarketErrors.CALLER_NOT_SELLER);
+        require(exchangeOrder.isActive == true, MarketErrors.EXCHANGE_ORDER_NOT_ACTIVE);
+
+        _transferAsset(
+            exchangeOrder.nftAddresses[0],
+            exchangeOrder.tokenIds[0],
+            exchangeOrder.nftAmounts[0],
+            address(this),
+            exchangeOrder.users[0],
+            "0x"
+        );
+
+        exchangeOrderList.deactiveExchangeOrder(exchangeId);
+    }
+
+    function removeExchangeOrder(uint256 exchangeId) external onlyMarketAdmin {
+        ExchangeOrderType.ExchangeOrder memory exchangeOrder = exchangeOrderList
+            .getExchangeOrderById(exchangeId);
         require(exchangeOrder.isActive == true, MarketErrors.EXCHANGE_ORDER_NOT_ACTIVE);
 
         _transferAsset(
@@ -337,8 +370,8 @@ contract Market is Initializable, ReentrancyGuard {
         address receiver,
         bytes memory data
     ) external payable nonReentrant {
-        ExchangeOrderType.ExchangeOrder memory exchangeOrder =
-            exchangeOrderList.getExchangeOrderById(exchangeId);
+        ExchangeOrderType.ExchangeOrder memory exchangeOrder = exchangeOrderList
+            .getExchangeOrderById(exchangeId);
         require(exchangeOrder.users[0] != msg.sender, MarketErrors.CALLER_IS_SELLER);
         require(exchangeOrder.isActive == true, MarketErrors.EXCHANGE_ORDER_NOT_ACTIVE);
         require(
