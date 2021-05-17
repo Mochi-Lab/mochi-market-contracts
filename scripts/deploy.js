@@ -19,6 +19,7 @@ async function main() {
   let regularFeeDenominator = '1000';
   let nativeCoin;
   let tx;
+  let nativeCoinAddress = '0x0000000000000000000000000000000000000000';
 
   let [deployer, marketAdmin] = await ethers.getSigners();
 
@@ -150,6 +151,13 @@ async function main() {
   console.log('\nSet Market Implementation...');
   tx = await addressesProvider.connect(deployer).setMarketImpl(marketImpl.address, initData);
   await tx.wait();
+
+  // Approve Native coin and MOMA;
+  console.log('\nAccept native coin and MOMA');
+  let market = await ethers.getContractAt('Market', await addressesProvider.getMarket());
+  tx = await market.connect(marketAdmin).acceptToken(nativeCoinAddress);
+  await tx.wait();
+  tx = await market.connect(marketAdmin).acceptToken(momaTokenAddress);
 
   console.log('\nDeploy Mochi NFT...');
   let MochiERC721NFT = await ethers.getContractFactory('MochiERC721NFT');

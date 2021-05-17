@@ -37,6 +37,9 @@ describe('Market', async () => {
     let TestERC20 = await ethers.getContractFactory('TestERC20');
     dai = await TestERC20.connect(deployer).deploy('DAI Token', 'DAI');
     link = await TestERC20.connect(deployer).deploy('LINK Token', 'LINK');
+
+    await market.connect(marketAdmin).acceptToken(ETH_Address);
+    await market.connect(marketAdmin).acceptToken(moma.address);
   });
 
   it('All setup successfully', async () => {
