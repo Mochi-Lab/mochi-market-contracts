@@ -21,7 +21,7 @@ interface IMarket {
         address token
     ) external;
 
-    function cancleSellOrder(uint256 sellId) external;
+    function cancelSellOrder(uint256 sellId) external;
 
     function buy(
         uint256 sellId,
@@ -42,7 +42,7 @@ interface IMarket {
         bytes[] memory data
     ) external;
 
-    function cancleExchangeOrder(uint256 exchangeId) external;
+    function cancelExchangeOrder(uint256 exchangeId) external;
 
     function exchange(
         uint256 exchangeId,
