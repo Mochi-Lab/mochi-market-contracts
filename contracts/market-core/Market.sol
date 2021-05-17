@@ -77,9 +77,6 @@ contract Market is Initializable, ReentrancyGuard {
         _momaFeeDenominator = momaFeeDenominator;
         _regularFeeNumerator = regularFeeNumerator;
         _regularFeeDenominator = regularFeeDenominator;
-
-        acceptedToken[address(0)] = true;
-        acceptedToken[moma] = true;
     }
 
     /**
@@ -89,7 +86,9 @@ contract Market is Initializable, ReentrancyGuard {
      **/
     function acceptToken(address token) external onlyMarketAdmin {
         require(acceptedToken[token] == false, MarketErrors.TOKEN_ALREADY_ACCEPTED);
-        IERC20(token).approve(address(vault), type(uint256).max);
+        if (token != address(0)) {
+            IERC20(token).safeApprove(address(vault), type(uint256).max);
+        }
         vault.setupRewardToken(token);
         acceptedToken[token] = true;
     }
