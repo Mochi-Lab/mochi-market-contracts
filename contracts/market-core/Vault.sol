@@ -316,7 +316,7 @@ contract Vault is Initializable, ReentrancyGuard {
 
         if (currentPeriod == 0) {
             return _firstRate;
-        } else if (2 ^ currentPeriod > _firstRate || currentPeriod > _numberOfCycle) {
+        } else if (2**currentPeriod > _firstRate || currentPeriod > _numberOfCycle) {
             return 0;
         } else {
             return _firstRate / (2**currentPeriod);
@@ -360,8 +360,8 @@ contract Vault is Initializable, ReentrancyGuard {
     }
 
     function _calculateRoyalty(uint256 amount) internal view returns (uint256) {
-        uint256 royaltyAmount =
-            ((amount * SAFE_NUMBER * _royaltyNumerator) / _royaltyDenominator) / SAFE_NUMBER;
+        uint256 royaltyAmount = ((amount * SAFE_NUMBER * _royaltyNumerator) / _royaltyDenominator) /
+            SAFE_NUMBER;
         return royaltyAmount;
     }
 }
