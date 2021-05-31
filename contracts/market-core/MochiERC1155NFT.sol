@@ -28,13 +28,15 @@ contract MochiERC1155NFT is ERC1155 {
         uint256 amount,
         string memory tokenUri,
         bytes memory data
-    ) external {
+    ) external returns (uint256){
         _tokenIds.increment();
 
         uint256 newTokenId = _tokenIds.current();
 
         _mint(_msgSender(), newTokenId, amount, data);
         _tokenUri[newTokenId] = tokenUri;
+
+        return newTokenId;
     }
 
     function burn(uint256 id, uint256 amount) external {
@@ -43,5 +45,9 @@ contract MochiERC1155NFT is ERC1155 {
 
     function uri(uint256 id) public view override returns (string memory) {
         return _tokenUri[id];
+    }
+
+    function currentTokenId() external view returns(uint256) {
+        return _tokenIds.current();
     }
 }

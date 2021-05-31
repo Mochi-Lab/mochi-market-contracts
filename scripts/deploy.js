@@ -3,8 +3,7 @@ const { ethers, network } = require('hardhat');
 async function main() {
   if (
     network.name != 'bsctestnet' &&
-    network.name != 'onetestnet' &&
-    network.name != 'ropsten' &&
+    network.name != 'bscmainnet' &&
     network.name != 'rinkeby'
   ) {
     throw Error('Invalid network');
@@ -28,6 +27,10 @@ async function main() {
   if (network.name === 'rinkeby') {
     momaTokenAddress = '0xFF02166F7ef6F03b18fB7c6e23d30430202Ef9A2';
     nativeCoin = 'ETH';
+  }
+  if (network.name === 'bscmainnet') {
+    momaTokenAddress = '0xb72842d6f5fedf91d22d56202802bb9a79c6322e';
+    nativeCoin = 'BNB';
   }
   if (network.name === 'bsctestnet') {
     nativeCoin = 'BNB';

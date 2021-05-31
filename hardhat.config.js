@@ -34,28 +34,28 @@ module.exports = {
       ],
       gasLimit: 30000000,
     },
-    onetestnet: {
-      url: `https://api.s0.b.hmny.io`,
+    bscmainnet: {
+      url: `https://bsc-dataseed.binance.org/`,
       accounts: [
-        process.env.ONE_TESTNET_DEPLOYER_PRIVATE_KEY,
-        process.env.ONE_TESTNET_MARKET_ADMIN_PRIVATE_KEY,
+        process.env.BSC_MAINNET_DEPLOYER_PRIVATE_KEY,
+        process.env.BSC_MAINNET_MARKET_ADMIN_PRIVATE_KEY,
       ],
-    },
-    ropsten: {
-      url: `https://ropsten.infura.io/v3/${process.env.INFURA_KEY}`,
-      accounts: [
-        process.env.ROPSTEN_DEPLOYER_PRIVATE_KEY,
-        process.env.ROPSTEN_MARKET_ADMIN_PRIVATE_KEY,
-      ],
-      gasLimit: '6721975',
+      gasLimit: 30000000,
     },
     rinkeby: {
       url: `https://rinkeby.infura.io/v3/${process.env.INFURA_KEY}`,
       accounts: [
-        process.env.ROPSTEN_DEPLOYER_PRIVATE_KEY,
-        process.env.ROPSTEN_MARKET_ADMIN_PRIVATE_KEY,
+        process.env.RINKEBY_DEPLOYER_PRIVATE_KEY,
+        process.env.RINKEBY_MARKET_ADMIN_PRIVATE_KEY,
       ],
       gasLimit: '6721975',
+    },
+    onemainnet: {
+      url: `https://api.harmony.one`,
+      accounts: [
+        process.env.ONE_MAINNET_DEPLOYER_PRIVATE_KEY,
+        process.env.ONE_MAINNET_MARKET_ADMIN_PRIVATE_KEY,
+      ],
     },
   },
 
