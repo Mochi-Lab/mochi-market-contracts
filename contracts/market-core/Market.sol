@@ -106,6 +106,10 @@ contract Market is Initializable, ReentrancyGuard {
         acceptedToken[token] = false;
     }
 
+    function updateMoma(address momaToken) external onlyMarketAdmin {
+        moma = momaToken;
+    }
+
     /**
      * @dev Update fee for transactions
      * - Can only be called by market admin

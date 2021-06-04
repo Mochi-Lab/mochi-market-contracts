@@ -50,6 +50,14 @@ module.exports = {
       ],
       gasLimit: '6721975',
     },
+    maticmainnet: {
+      url: `https://rpc-mainnet.maticvigil.com/`,
+      accounts: [
+        process.env.MATIC_MAINNET_DEPLOYER_PRIVATE_KEY,
+        process.env.MATIC_MAINNET_MARKET_ADMIN_PRIVATE_KEY,
+      ],
+      gasLimit: '6721975',
+    },
   },
 
   gas: 40000000,
