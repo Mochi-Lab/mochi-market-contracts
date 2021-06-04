@@ -36,7 +36,7 @@ contract MochiERC1155NFT is ERC1155 {
         _mint(_msgSender(), newTokenId, amount, data);
         _tokenUri[newTokenId] = tokenUri;
 
-        return newTokenId
+        return newTokenId;
     }
 
     function burn(uint256 id, uint256 amount) external {
