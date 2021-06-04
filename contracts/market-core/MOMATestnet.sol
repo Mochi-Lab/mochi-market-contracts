@@ -20,6 +20,6 @@ contract MOMATestnet is ERC20, Ownable {
 
     function faucet() external notSpam {
         userToTimestamp[msg.sender] = block.timestamp;
-        _mint(msg.sender, 30 ether);
+        _mint(msg.sender, 3000 ether);
     }
 }
