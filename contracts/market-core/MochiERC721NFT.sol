@@ -27,16 +27,22 @@ contract MochiERC721NFT is ERC721Enumerable {
         return _tokenUri[tokenId];
     }
 
-    function mint(string memory tokenUri) external {
+    function mint(string memory tokenUri) external returns(uint256){
         _tokenIds.increment();
 
         uint256 newTokenId = _tokenIds.current();
 
         _mint(_msgSender(), newTokenId);
         _tokenUri[newTokenId] = tokenUri;
+
+        return newTokenId;
     }
 
     function burn(uint256 tokenId) external onlyOwnerOf(tokenId) {
         _burn(tokenId);
+    }
+
+    function currentTokenId() external view returns(uint256) {
+        return _tokenIds.current();
     }
 }
