@@ -174,7 +174,7 @@ contract Market is Initializable, ReentrancyGuard {
         _transferAsset(
             sellOrder.nftAddress,
             sellOrder.tokenId,
-            sellOrder.amount,
+            sellOrder.amount - sellOrder.soldAmount,
             address(this),
             sellOrder.seller,
             "0x"
@@ -190,7 +190,7 @@ contract Market is Initializable, ReentrancyGuard {
         _transferAsset(
             sellOrder.nftAddress,
             sellOrder.tokenId,
-            sellOrder.amount,
+            sellOrder.amount - sellOrder.soldAmount,
             address(this),
             sellOrder.seller,
             "0x"
