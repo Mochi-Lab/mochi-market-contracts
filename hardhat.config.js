@@ -24,7 +24,7 @@ module.exports = {
     localhost: {
       url: 'http://127.0.0.1:8545',
       gasLimit: 6000000000,
-      defaultBalanceEther: '1000',
+      defaultBalanceEther: '100000',
     },
     bsctestnet: {
       url: `https://data-seed-prebsc-1-s1.binance.org:8545/`,
