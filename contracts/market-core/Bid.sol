@@ -282,4 +282,51 @@ contract Bid is Ownable, BidStorage {
         }
         return bidId;
     }
+
+    function cancelBid(address _tokenAddress, uint256 _tokenId)
+        public
+    {
+        // Get active bid
+        (uint256 bidIndex, bytes32 bidId, , , ) = getBidByBidder(
+            _tokenAddress,
+            _tokenId,
+            msg.sender
+        );
+
+        _cancelBid(bidIndex, bidId, _tokenAddress, _tokenId, msg.sender);
+    }
+    
+    function _cancelBid(
+        uint256 _bidIndex,
+        bytes32 _bidId,
+        address _tokenAddress,
+        uint256 _tokenId,
+        address _bidder
+    ) internal {
+        // Delete bid references
+        delete bidIndexByBidId[_bidId];
+        delete bidIdByTokenAndBidder[_tokenAddress][_tokenId][_bidder];
+
+        // Check if the bid is at the end of the mapping
+        uint256 lastBidIndex = bidCounterByToken[_tokenAddress][_tokenId].sub(
+            1
+        );
+        if (lastBidIndex != _bidIndex) {
+            // Move last bid to the removed place
+            Bid storage lastBid = _bidsByToken[_tokenAddress][_tokenId][
+                lastBidIndex
+            ];
+            _bidsByToken[_tokenAddress][_tokenId][_bidIndex] = lastBid;
+            bidIndexByBidId[lastBid.id] = _bidIndex;
+        }
+
+        // Delete empty index
+        delete _bidsByToken[_tokenAddress][_tokenId][lastBidIndex];
+
+        // Decrease bids counter
+        bidCounterByToken[_tokenAddress][_tokenId]--;
+
+        // emit BidCancelled event
+        emit BidCancelled(_bidId, _tokenAddress, _tokenId, _bidder);
+    }
 }
