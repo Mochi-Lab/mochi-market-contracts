@@ -51,6 +51,8 @@ contract BidStorage {
     // MOMA token
     ERC20Interface public momaToken;
 
+    // Token accepted for bid
+    mapping(address => bool) public acceptedToken;
     // Bid by token address => token id => bid index => bid
     mapping(address => mapping(uint256 => mapping(uint256 => Bid))) internal _bidsByToken;
     // Bid count by token address => token id => bid counts
@@ -71,7 +73,7 @@ contract BidStorage {
       address indexed _tokenAddress,
       uint256 indexed _tokenId,
       address indexed _bidder,
-      address tokenErc20,
+      address _tokenErc20,
       uint256 _price,
       uint256 _expiresAt
     );
@@ -82,7 +84,7 @@ contract BidStorage {
       uint256 indexed _tokenId,
       address _bidder,
       address indexed _seller,
-      address tokenErc20,
+      address _tokenErc20,
       uint256 _price,
       uint256 _fee
     );
