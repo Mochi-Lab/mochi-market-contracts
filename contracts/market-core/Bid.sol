@@ -38,7 +38,7 @@ contract Bid is Ownable, BidStorage {
 
         require(_price > 0, "Price should be bigger than 0");
 
-        _requireBidderBalance(sender, _price);
+        _requireBidderBalance(sender, _price, _tokenErc20);
 
         require(
             _duration >= MIN_BID_DURATION,
@@ -49,6 +49,8 @@ contract Bid is Ownable, BidStorage {
             _duration <= MAX_BID_DURATION,
             "The bid can not last longer than 6 months"
         );
+
+        require(acceptedToken[token] == true, "Token should be accepted");
 
         ERC721Interface token = ERC721Interface(_tokenAddress);
         address tokenOwner = token.ownerOf(_tokenId);
@@ -74,7 +76,7 @@ contract Bid is Ownable, BidStorage {
 
         if (_bidderHasABid(_tokenAddress, _tokenId, sender)) {
             bytes32 oldBidId;
-            (bidIndex, oldBidId, , , ) = getBidByBidder(
+            (bidIndex, oldBidId, , , , ) = getBidByBidder(
                 _tokenAddress,
                 _tokenId,
                 sender
@@ -114,7 +116,7 @@ contract Bid is Ownable, BidStorage {
             expiresAt
         );
     }
-    
+
     function acceptBid(
         address _tokenAddress,
         uint256 _tokenId,
@@ -132,7 +134,7 @@ contract Bid is Ownable, BidStorage {
             bid.id == bidId && bid.expiresAt >= block.timestamp,
             "Invalid bid"
         );
-        
+
         ERC721Interface token = ERC721Interface(_tokenAddress);
         address tokenOwner = token.ownerOf(_tokenId);
         require(
@@ -168,7 +170,7 @@ contract Bid is Ownable, BidStorage {
         // Transfer ERC20 from bidder to seller
         require(
             ERC20Interface(tokenErc20).transferFrom(bidder, sender, price),
-            'Transfering ERC20 to owner failed'
+            "Transfering ERC20 to owner failed"
         );
 
         emit BidAccepted(
@@ -184,7 +186,7 @@ contract Bid is Ownable, BidStorage {
 
         return ERC721_Received;
     }
-    
+
     function _bidderHasABid(
         address _tokenAddress,
         uint256 _tokenId,
@@ -199,7 +201,7 @@ contract Bid is Ownable, BidStorage {
         }
         return false;
     }
-    
+
     function getBidByBidder(
         address _tokenAddress,
         uint256 _tokenId,
@@ -211,6 +213,7 @@ contract Bid is Ownable, BidStorage {
             uint256 bidIndex,
             bytes32 bidId,
             address bidder,
+            address tokenErc20,
             uint256 price,
             uint256 expiresAt
         )
@@ -227,17 +230,17 @@ contract Bid is Ownable, BidStorage {
         }
     }
 
-    function _requireBidderBalance(address _bidder, uint256 _amount)
+    function _requireBidderBalance(address _bidder, uint256 _amount, address _tokenErc20)
         internal
         view
     {
-        require(momaToken.balanceOf(_bidder) >= _amount, "Insufficient funds");
+        require(ERC20Interface(_tokenErc20).balanceOf(_bidder) >= _amount, "Insufficient funds");
         require(
-            momaToken.allowance(_bidder, address(this)) >= _amount,
+            ERC20Interface(_tokenErc20).allowance(_bidder, address(this)) >= _amount,
             "The contract is not authorized to use MOMA on bidder behalf"
         );
     }
-    
+
     function getBidByToken(
         address _tokenAddress,
         uint256 _tokenId,
@@ -287,7 +290,7 @@ contract Bid is Ownable, BidStorage {
         public
     {
         // Get active bid
-        (uint256 bidIndex, bytes32 bidId, , , ) = getBidByBidder(
+        (uint256 bidIndex, bytes32 bidId, , , , ) = getBidByBidder(
             _tokenAddress,
             _tokenId,
             msg.sender
@@ -295,7 +298,7 @@ contract Bid is Ownable, BidStorage {
 
         _cancelBid(bidIndex, bidId, _tokenAddress, _tokenId, msg.sender);
     }
-    
+
     function _cancelBid(
         uint256 _bidIndex,
         bytes32 _bidId,
@@ -328,5 +331,57 @@ contract Bid is Ownable, BidStorage {
 
         // emit BidCancelled event
         emit BidCancelled(_bidId, _tokenAddress, _tokenId, _bidder);
+    }
+
+    function acceptToken(address token) external onlyOwner {
+        require(acceptedToken[token] == false, "Token accepted already");
+        acceptedToken[token] = true;
+    }
+
+    function revokeToken(address token) external onlyOwner {
+        require(acceptedToken[token] == true, "Token revoked already");
+        acceptedToken[token] = false;
+    }
+
+    function removeExpiredBids(
+        address[] memory _tokenAddresses,
+        uint256[] memory _tokenIds,
+        address[] memory _bidders
+    ) public {
+        uint256 loopLength = _tokenAddresses.length;
+
+        require(
+            loopLength == _tokenIds.length,
+            "Parameter arrays should have the same length"
+        );
+        require(
+            loopLength == _bidders.length,
+            "arameter arrays should have the same length"
+        );
+
+        for (uint256 i = 0; i < loopLength; i++) {
+            _removeExpiredBid(_tokenAddresses[i], _tokenIds[i], _bidders[i]);
+        }
+    }
+
+    function _removeExpiredBid(
+        address _tokenAddress,
+        uint256 _tokenId,
+        address _bidder
+    ) internal {
+        (
+            uint256 bidIndex,
+            bytes32 bidId,
+            ,
+            ,
+            ,
+            uint256 expiresAt
+        ) = getBidByBidder(_tokenAddress, _tokenId, _bidder);
+
+        require(
+            expiresAt < block.timestamp,
+            "The bid to remove should be expired"        );
+
+        _cancelBid(bidIndex, bidId, _tokenAddress, _tokenId, _bidder);
     }
 }
